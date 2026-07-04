@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { supabase } from "../../lib/supabase";
 import { Item } from "../../lib/types";
 
 export default function CartPage() {
@@ -11,11 +10,13 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem("ion-cart");
-    if (saved) {
-      setCartItems(JSON.parse(saved));
-    }
-    setLoading(false);
+    Promise.resolve().then(() => {
+      const saved = localStorage.getItem("ion-cart");
+      if (saved) {
+        setCartItems(JSON.parse(saved));
+      }
+      setLoading(false);
+    });
   }, []);
 
   const removeFromCart = (id: string) => {
@@ -93,8 +94,9 @@ export default function CartPage() {
                 >
                   {/* IMAGEN */}
                   <div className="w-32 h-32 flex-shrink-0">
-                    <img 
-                      src={item.imagen_url} 
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.imagen_url}
                       alt={item.nombre}
                       className="w-full h-full object-cover rounded-xl"
                       onError={(e) => (e.currentTarget.src = "/placeholder.png")}

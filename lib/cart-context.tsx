@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { Item } from "./types";
 
 interface CartContextType {
@@ -13,17 +13,22 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Item[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+function initializeCart() {
+  if (typeof window === 'undefined') return [];
+  const savedCart = localStorage.getItem("ion-cart");
+  return savedCart ? JSON.parse(savedCart) : [];
+}
 
-  // Cargar datos del localStorage
-  useEffect(() => {
-    const savedCart = localStorage.getItem("ion-cart");
-    const savedWishlist = localStorage.getItem("ion-wishlist");
-    if (savedCart) setItems(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
-  }, []);
+function initializeWishlist() {
+  if (typeof window === 'undefined') return [];
+  const savedWishlist = localStorage.getItem("ion-wishlist");
+  return savedWishlist ? JSON.parse(savedWishlist) : [];
+}
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<Item[]>(initializeCart);
+  const [wishlist, setWishlist] = useState<string[]>(initializeWishlist);
+
 
   const addToCart = (item: Item) => {
     const updated = [...items, item];

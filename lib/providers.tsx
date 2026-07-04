@@ -1,12 +1,15 @@
 "use client";
 
-import { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactNode, useState } from "react";
 import { CartProvider } from "./cart-context";
 
 export function RootProviders({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
-    <CartProvider>
-      {children}
-    </CartProvider>
+    <QueryClientProvider client={queryClient}>
+      <CartProvider>{children}</CartProvider>
+    </QueryClientProvider>
   );
 }

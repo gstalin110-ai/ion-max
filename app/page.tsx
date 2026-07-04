@@ -4,25 +4,36 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Item } from "../lib/types";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-  },
+const fadeInUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
 
 export default function Home() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<Item[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [cart] = useState<Item[]>(() => {
+    if (typeof window === "undefined") return [];
+    const savedCart = localStorage.getItem("ion-cart");
+    return savedCart ? JSON.parse(savedCart) : [];
+  });
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    const savedWishlist = localStorage.getItem("ion-wishlist");
+    return savedWishlist ? JSON.parse(savedWishlist) : [];
+  });
 
   useEffect(() => {
     async function cargarDatos() {
@@ -40,12 +51,6 @@ export default function Home() {
       setLoading(false);
     }
     cargarDatos();
-
-    // Cargar carrito y wishlist del localStorage
-    const savedCart = localStorage.getItem("ion-cart");
-    const savedWishlist = localStorage.getItem("ion-wishlist");
-    if (savedCart) setCart(JSON.parse(savedCart));
-    if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
   }, []);
 
   const shopItems = items.filter(i => i.categoria === 'SHOP');
@@ -60,146 +65,273 @@ export default function Home() {
     });
   };
 
-  const addToCart = (item: Item) => {
-    setCart(prev => {
-      const updated = [...prev, item];
-      localStorage.setItem("ion-cart", JSON.stringify(updated));
-      return updated;
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-400">Cargando experiencia IÓN MAX...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black scroll-smooth">
       
-      {/* NAVBAR */}
-      <nav className="fixed top-0 left-0 w-full bg-black/80 backdrop-blur-md border-b border-white/10 z-50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-8 py-5">
-          <span className="text-xl font-black tracking-widest uppercase">IÓN MAX</span>
-          <div className="hidden md:flex gap-8 text-sm font-bold text-zinc-400 uppercase tracking-wide">
-            {shopItems.length > 0 && <a href="#shop" className="hover:text-white transition">Shop</a>}
-            {academyItems.length > 0 && <a href="#academy" className="hover:text-white transition">Academy</a>}
-            {serviceItems.length > 0 && <a href="#services" className="hover:text-white transition">Services</a>}
-            <a href="#nosotros" className="hover:text-white transition">V1.0</a>
+      {/* NAVBAR PREMIUM */}
+      <nav className="fixed top-0 left-0 w-full bg-black/70 backdrop-blur-2xl border-b border-white/5 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent"
+          >
+            ⚡ IÓN MAX
+          </motion.div>
+          <div className="hidden md:flex gap-6 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+            {shopItems.length > 0 && <a href="#shop" className="hover:text-white transition duration-300">Shop</a>}
+            {academyItems.length > 0 && <a href="#academy" className="hover:text-white transition duration-300">Academy</a>}
+            {serviceItems.length > 0 && <a href="#services" className="hover:text-white transition duration-300">Services</a>}
+            <Link href="/marketplace" className="hover:text-white transition duration-300">Marketplace</Link>
+            <Link href="/dashboard" className="hover:text-white transition duration-300">Dashboard</Link>
+            <a href="#confianza" className="hover:text-white transition duration-300">Confianza</a>
           </div>
-          <a href="/carrito" className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full font-bold text-xs hover:bg-zinc-200 transition uppercase tracking-widest">
-            🛒 Carrito ({cart.length})
-          </a>
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard" className="hidden rounded-full border border-white/20 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-zinc-300 transition hover:border-white hover:text-white sm:inline-flex">
+              Panel
+            </Link>
+            <Link href="/carrito" className="bg-gradient-to-r from-white to-zinc-200 text-black px-5 py-2 rounded-full font-black text-xs hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition uppercase tracking-wider">
+              🛒 {cart.length}
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* HERO - PANTALLA DE INICIO */}
-      <section className="h-screen flex flex-col justify-center items-center text-center px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-black to-black -z-10"></div>
-        <h1 className="text-7xl md:text-9xl font-black tracking-tighter mb-6 bg-gradient-to-br from-white to-zinc-600 bg-clip-text text-transparent drop-shadow-2xl">
-          IÓN MAX
-        </h1>
-        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mb-10 font-light tracking-wide">
-          La marca que redefine la autoridad digital. Lujo, conocimiento avanzado y servicios operativos de alto impacto.
-        </p>
-        <a href="#shop" className="bg-white text-black px-12 py-4 rounded-full font-black text-sm hover:scale-105 transition-transform duration-300 uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-          Ingresar al Sistema
-        </a>
-      </section>
-      {/* PILAR 1: ION SHOP */}
-      {shopItems.length > 0 && (
-        <section id="shop" className="max-w-7xl mx-auto py-24 px-6">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            className="text-5xl font-black mb-16 border-l-4 border-white pl-6 uppercase tracking-wider"
+      {/* HERO BRUTAL */}
+      <section className="min-h-screen relative flex flex-col justify-center items-center pt-20 px-6 overflow-hidden">
+        {/* FONDO ANIMADO */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-white/3 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-center z-10"
+        >
+          <motion.span
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-block text-xs font-black uppercase tracking-widest text-zinc-400 mb-6 px-4 py-2 border border-white/20 rounded-full bg-white/5 backdrop-blur"
           >
-            ION Shop — Lujo & Tecnología
+            ✨ La Marca de Autoridad Digital
+          </motion.span>
+
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-none"
+          >
+            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
+              ELEVA TU
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-600 bg-clip-text text-transparent drop-shadow-2xl">
+              AUTORIDAD
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-lg md:text-xl text-zinc-300 max-w-2xl mx-auto mb-12 leading-relaxed font-light"
+          >
+            Productos de lujo • Educación transformadora • Servicios de alto impacto
+            <br />
+            <span className="text-white font-bold">Todo en un ecosistema premium</span>
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-col md:flex-row gap-4 justify-center"
+          >
+            <a 
+              href="#shop"
+              className="group bg-white text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all duration-300 transform hover:scale-105"
+            >
+              🚀 Explorar Ahora
+            </a>
+            <Link
+              href="/marketplace"
+              className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
+            >
+              🛍️ Ver Marketplace
+            </Link>
+            <a 
+              href="https://wa.me/593980887170"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
+            >
+              📲 Consulta Gratis
+            </a>
+          </motion.div>
+
+          {/* STATS */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="grid grid-cols-3 gap-4 mt-20 max-w-md mx-auto text-center"
+          >
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
+              <p className="text-2xl font-black">{items.length}+</p>
+              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Productos</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
+              <p className="text-2xl font-black">10K+</p>
+              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Clientes</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
+              <p className="text-2xl font-black">⭐ 4.9</p>
+              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Calificación</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* SECCIÓN CONFIANZA */}
+      <section id="confianza" className="py-24 px-6 bg-gradient-to-b from-zinc-950 to-black border-y border-white/5">
+        <div className="max-w-6xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="text-4xl md:text-5xl font-black text-center mb-16 uppercase tracking-wider"
+          >
+            Por Qué Confían En Nosotros
           </motion.h2>
-          <motion.div 
-            variants={containerVariants}
+
+          <motion.div
+            variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            className="grid md:grid-cols-3 gap-8"
+            className="grid md:grid-cols-4 gap-6"
           >
-            {shopItems.map((p) => (
-              <motion.div 
-                key={p.id} 
-                variants={itemVariants}
-                className="group relative bg-zinc-900/40 border border-white/5 rounded-3xl p-6 hover:border-white/30 transition-all duration-500 overflow-hidden"
+            {[
+              { icon: "✅", title: "100% Garantizado", desc: "O devolvemos tu dinero sin preguntas" },
+              { icon: "🔒", title: "Seguridad Total", desc: "Encriptación de nivel bancario" },
+              { icon: "⚡", title: "Entrega Rápida", desc: "Acceso inmediato a todos los productos" },
+              { icon: "👥", title: "Soporte Premium", desc: "Team dedicado 24/7 para ti" },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={fadeInUp}
+                className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all group"
               >
-                {p.etiqueta && (
-                  <span className="absolute top-8 right-8 z-10 bg-white text-black text-xs font-black px-3 py-1 rounded-full shadow-lg">
-                    {p.etiqueta}
-                  </span>
-                )}
-                <button
-                  onClick={() => toggleWishlist(p.id)}
-                  className="absolute top-6 left-6 z-10 text-2xl transition-transform hover:scale-125"
-                >
-                  {wishlist.includes(p.id) ? "❤️" : "🤍"}
-                </button>
-                <img 
-                  src={p.imagen_url} 
-                  alt={p.nombre} 
-                  className="w-full h-72 object-cover rounded-2xl mb-6 grayscale group-hover:grayscale-0 transition-all duration-700"
-                  onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                />
-                <h3 className="text-2xl font-bold tracking-tight">{p.nombre}</h3>
-                <p className="text-zinc-400 mt-2 text-sm line-clamp-2">{p.descripcion}</p>
-                <div className="mt-6 flex items-center justify-between gap-3">
-                  <span className="text-3xl font-black">${p.precio}</span>
-                  <a 
-                    href={p.enlace_externo} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="bg-white text-black px-6 py-3 rounded-xl font-bold text-xs hover:bg-zinc-200 transition uppercase tracking-wider"
-                  >
-                    Adquirir
-                  </a>
-                </div>
+                <div className="text-4xl mb-4 group-hover:scale-125 transition-transform">{item.icon}</div>
+                <h3 className="font-black uppercase tracking-wider text-sm mb-2">{item.title}</h3>
+                <p className="text-zinc-500 text-sm">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
-        </section>
-      )}
-      {/* PILAR 2: ION ACADEMY */}
-      {academyItems.length > 0 && (
-        <section id="academy" className="bg-zinc-950 py-24 border-y border-white/5">
-          <div className="max-w-7xl mx-auto px-6">
-            <motion.h2 
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              className="text-5xl font-black mb-16 border-l-4 border-zinc-500 pl-6 uppercase tracking-wider text-white"
+        </div>
+      </section>
+
+      {/* ION SHOP - LUJO ABSOLUTO */}
+      {shopItems.length > 0 && (
+        <section id="shop" className="py-32 px-6 relative">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className="mb-20 text-center"
             >
-              ION Academy — Educación & Innovación
-            </motion.h2>
-            <motion.div 
-              variants={containerVariants}
+              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
+                CATEGORÍA 1 DE 3
+              </span>
+              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
+                ION <span className="text-transparent bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text">SHOP</span>
+              </h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto">Productos de lujo seleccionados que definen tu autoridad. Solo lo mejor para quienes exigen calidad absoluta.</p>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
               initial="hidden"
               whileInView="visible"
-              className="grid md:grid-cols-2 gap-8"
+              className="grid md:grid-cols-3 gap-8"
             >
-              {academyItems.map((p) => (
-                <motion.div 
-                  key={p.id} 
-                  variants={itemVariants}
-                  className="flex flex-col md:flex-row bg-black border border-white/10 rounded-3xl overflow-hidden hover:border-white/30 transition-all duration-500"
+              {shopItems.map((product) => (
+                <motion.div
+                  key={product.id}
+                  variants={scaleIn}
+                  className="group relative bg-gradient-to-br from-blue-950/30 to-black border border-blue-500/20 rounded-3xl overflow-hidden hover:border-blue-400/50 transition-all duration-500"
                 >
-                  <img 
-                    src={p.imagen_url} 
-                    alt={p.nombre} 
-                    className="w-full md:w-48 h-48 md:h-auto object-cover opacity-80 hover:opacity-100 transition-opacity"
-                    onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                  />
-                  <div className="p-8 flex flex-col justify-center flex-1">
-                    {p.etiqueta && <span className="text-xs font-bold text-zinc-400 mb-2 uppercase tracking-widest">✨ {p.etiqueta}</span>}
-                    <h3 className="text-2xl font-bold">{p.nombre}</h3>
-                    <p className="text-zinc-400 mt-2 text-sm">{p.descripcion}</p>
-                    <div className="mt-6 flex items-center gap-6">
-                      <span className="text-2xl font-black">${p.precio}</span>
-                      <a 
-                        href={p.enlace_externo} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="bg-zinc-800 text-white border border-white/10 px-6 py-3 rounded-xl font-bold text-xs hover:bg-white hover:text-black transition uppercase tracking-wider"
-                      >
-                        Inscribirse
-                      </a>
+                  {/* BADGE */}
+                  {product.etiqueta && (
+                    <div className="absolute top-6 right-6 z-20">
+                      <span className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg">
+                        {product.etiqueta}
+                      </span>
                     </div>
+                  )}
+
+                  {/* WISHLIST */}
+                  <button
+                    onClick={() => toggleWishlist(product.id)}
+                    className="absolute top-6 left-6 z-20 text-3xl transition-transform hover:scale-125 drop-shadow-lg"
+                  >
+                    {wishlist.includes(product.id) ? "❤️" : "🤍"}
+                  </button>
+
+                  {/* IMAGEN */}
+                  <div className="relative overflow-hidden h-80">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={product.imagen_url}
+                      alt={product.nombre}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
+                      onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  </div>
+
+                  {/* CONTENIDO */}
+                  <div className="p-8">
+                    <h3 className="text-2xl font-black tracking-tight mb-2 group-hover:text-blue-400 transition">{product.nombre}</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed mb-6 line-clamp-2">{product.descripcion}</p>
+
+                    {/* PRECIO Y STOCK */}
+                    <div className="flex items-end justify-between mb-6">
+                      <div>
+                        <p className="text-4xl font-black text-blue-400">${product.precio}</p>
+                        {product.stock && product.stock < 5 && (
+                          <p className="text-xs text-red-400 font-black mt-2 uppercase tracking-wider">⚠️ Solo {product.stock} disponibles</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <a
+                      href={product.enlace_externo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300 uppercase text-sm tracking-wider block text-center group-hover:scale-105 transform"
+                    >
+                      Adquirir Ahora →
+                    </a>
                   </div>
                 </motion.div>
               ))}
@@ -208,130 +340,317 @@ export default function Home() {
         </section>
       )}
 
-      {/* PILAR 3: ION SERVICES */}
-      {serviceItems.length > 0 && (
-        <section id="services" className="max-w-7xl mx-auto py-24 px-6">
-          <motion.h2 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            className="text-5xl font-black mb-16 border-l-4 border-white pl-6 uppercase tracking-wider"
-          >
-            ION Services — Operaciones de Alto Valor
-          </motion.h2>
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {serviceItems.map((p) => (
-              <motion.div 
-                key={p.id} 
-                variants={itemVariants}
-                className="bg-gradient-to-br from-zinc-900 to-black border border-white/10 rounded-3xl p-8 hover:border-white/30 hover:-translate-y-4 transition-all duration-500 group"
-              >
-                <div className="w-16 h-16 bg-white/5 border border-white/20 rounded-2xl mb-6 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all duration-300">
-                  <span className="text-3xl">⚙️</span>
-                </div>
-                {p.etiqueta && (
-                  <span className="inline-block bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
-                    {p.etiqueta}
-                  </span>
-                )}
-                <h3 className="text-2xl font-bold mb-3">{p.nombre}</h3>
-                <p className="text-zinc-400 text-sm mb-8 leading-relaxed">{p.descripcion}</p>
-                <a 
-                  href={p.enlace_externo} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="block w-full text-center bg-transparent border border-white/30 text-white px-6 py-3 rounded-xl font-bold text-xs hover:bg-white hover:text-black transition uppercase tracking-wider group-hover:border-white"
+      {/* ION ACADEMY - EDUCACIÓN TRANSFORMADORA */}
+      {academyItems.length > 0 && (
+        <section id="academy" className="py-32 px-6 bg-gradient-to-b from-purple-950/10 to-black border-y border-purple-500/10">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className="mb-20 text-center"
+            >
+              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
+                CATEGORÍA 2 DE 3
+              </span>
+              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
+                ION <span className="text-transparent bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text">ACADEMY</span>
+              </h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto">Cursos diseñados por expertos. Transforma tu conocimiento en poder real y monetizable.</p>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              className="space-y-6"
+            >
+              {academyItems.map((course) => (
+                <motion.div
+                  key={course.id}
+                  variants={fadeInUp}
+                  className="group bg-gradient-to-r from-purple-950/40 to-black border border-purple-500/20 rounded-2xl p-8 hover:border-purple-400/50 hover:bg-purple-950/60 transition-all duration-500 flex flex-col md:flex-row gap-8 items-start md:items-center"
                 >
-                  Solicitar Operación
-                </a>
-              </motion.div>
-            ))}
-          </motion.div>
+                  {/* IMAGEN */}
+                  <div className="flex-shrink-0 w-full md:w-48 h-48 rounded-xl overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={course.imagen_url}
+                      alt={course.nombre}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+                    />
+                  </div>
+
+                  {/* CONTENIDO */}
+                  <div className="flex-1">
+                    {course.etiqueta && (
+                      <span className="text-xs font-black uppercase tracking-widest text-purple-400 mb-3 inline-block">
+                        ✨ {course.etiqueta}
+                      </span>
+                    )}
+                    <h3 className="text-3xl font-black mb-3 group-hover:text-purple-400 transition">{course.nombre}</h3>
+                    <p className="text-zinc-400 mb-6 leading-relaxed">{course.descripcion}</p>
+
+                    <div className="flex flex-wrap items-center gap-6 mb-6">
+                      <div>
+                        <p className="text-3xl font-black text-purple-400">${course.precio}</p>
+                        <p className="text-xs text-zinc-500 mt-1">Acceso de por vida</p>
+                      </div>
+                      {course.stock && (
+                        <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                          <p className="text-xs text-zinc-400">📊 {course.stock} inscritos</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <a
+                      href={course.enlace_externo}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-gradient-to-r from-purple-600 to-purple-500 text-white font-black py-3 px-8 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all uppercase text-sm tracking-wider group-hover:scale-105 transform"
+                    >
+                      Inscribirse Ahora →
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
         </section>
       )}
 
-      {/* ABOUT - VISIÓN & MISIÓN */}
-      <section id="nosotros" className="py-32 px-6 bg-gradient-to-b from-black via-zinc-950 to-black relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent -z-10"></div>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto text-center"
+      {/* ION SERVICES - OPERACIONES DE ALTO VALOR */}
+      {serviceItems.length > 0 && (
+        <section id="services" className="py-32 px-6">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              className="mb-20 text-center"
+            >
+              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
+                CATEGORÍA 3 DE 3
+              </span>
+              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
+                ION <span className="text-transparent bg-gradient-to-r from-green-400 to-green-600 bg-clip-text">SERVICES</span>
+              </h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto">Servicios premium para empresas que exigen excelencia. Operaciones escalables y medibles.</p>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              whileInView="visible"
+              className="grid md:grid-cols-2 gap-8"
+            >
+              {serviceItems.map((service) => (
+                <motion.div
+                  key={service.id}
+                  variants={scaleIn}
+                  className="group bg-gradient-to-br from-green-950/30 to-black border border-green-500/20 rounded-3xl p-10 hover:border-green-400/50 hover:bg-green-950/40 transition-all duration-500 flex flex-col"
+                >
+                  <div className="mb-8">
+                    <div className="w-14 h-14 bg-green-600/20 border border-green-500/40 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-green-600/40 transition mb-6">
+                      ⚙️
+                    </div>
+                    {service.etiqueta && (
+                      <span className="text-xs font-black uppercase tracking-widest text-green-400 mb-3 inline-block">
+                        {service.etiqueta}
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-2xl font-black mb-3 group-hover:text-green-400 transition">{service.nombre}</h3>
+                  <p className="text-zinc-400 flex-1 mb-8 leading-relaxed">{service.descripcion}</p>
+
+                  <div className="mb-8">
+                    <p className="text-3xl font-black text-green-400 mb-2">${service.precio}</p>
+                    <p className="text-xs text-zinc-500">Consultoría + Implementación</p>
+                  </div>
+
+                  <a
+                    href={service.enlace_externo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transition-all duration-300 uppercase text-sm tracking-wider group-hover:scale-105 transform text-center"
+                  >
+                    Solicitar Consulta →
+                  </a>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* SECCIÓN CTA PODEROSA */}
+      <section className="py-32 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent -z-10"></div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          className="max-w-4xl mx-auto text-center bg-gradient-to-br from-white/10 to-white/5 backdrop-blur border border-white/20 rounded-3xl p-16"
         >
-          <h2 className="text-6xl md:text-7xl font-black mb-12 tracking-tighter">
-            Somos <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">IÓN MAX</span>
+          <h2 className="text-5xl md:text-6xl font-black mb-6 tracking-tighter">
+            ¿Listo para <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Transformar</span> tu Vida?
           </h2>
-          <div className="space-y-8">
-            <p className="text-zinc-300 text-xl leading-relaxed font-light">
-              No somos una marca común. <strong className="text-white">Somos la infraestructura</strong> donde la autoridad digital y el valor convergen.
-            </p>
-            <p className="text-zinc-400 text-lg leading-relaxed">
-              Comenzamos como una visión: <strong className="text-white">conectar a quienes generan valor con quienes lo buscan</strong>. 
-              Hoy operamos como una red organizada, escalable y tecnológicamente imparable.
-            </p>
-            <div className="grid md:grid-cols-3 gap-6 py-8">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur">
-                <p className="text-3xl font-black text-white mb-2">SHOP</p>
-                <p className="text-zinc-400 text-sm">Productos de lujo y tecnología que imponen autoridad</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur">
-                <p className="text-3xl font-black text-white mb-2">ACADEMY</p>
-                <p className="text-zinc-400 text-sm">Cursos que transforman aprendices en expertos</p>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur">
-                <p className="text-3xl font-black text-white mb-2">SERVICES</p>
-                <p className="text-zinc-400 text-sm">Operaciones de alto valor para empresas en crecimiento</p>
-              </div>
-            </div>
-            <p className="text-zinc-300 text-lg font-light pt-4">
-              <strong className="text-white block mb-2">Nuestra Meta:</strong>
-              Ser la marca más confiable en la venta de valor. No competimos por precio — 
-              competimos por <strong className="text-white">impacto, calidad y transformación</strong>.
-            </p>
+          <p className="text-zinc-300 text-lg mb-12 max-w-2xl mx-auto">
+            Únete a miles de personas que ya están experimentando el poder de IÓN MAX.
+          </p>
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <a
+              href="#shop"
+              className="bg-white text-black px-12 py-4 rounded-full font-black uppercase text-sm tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all hover:scale-105 transform"
+            >
+              Comenzar Ahora
+            </a>
+            <a
+              href="https://wa.me/593980887170"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border-2 border-white text-white px-12 py-4 rounded-full font-black uppercase text-sm tracking-widest hover:bg-white hover:text-black transition-all"
+            >
+              💬 Hablar con Experto
+            </a>
           </div>
         </motion.div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="py-20 text-center border-t border-white/10 bg-zinc-950/50 backdrop-blur px-6">
-        <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          className="max-w-2xl mx-auto mb-12"
-        >
-          <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase mb-6">Contacto Directo</p>
-          <p className="text-4xl font-black text-white mb-4">WhatsApp Business</p>
-          <a 
-            href="https://wa.me/593980887170" 
-            className="inline-block bg-white text-black px-10 py-4 rounded-full font-bold text-sm hover:scale-105 transition-transform uppercase tracking-widest shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+      {/* ABOUT MEJORADO */}
+      <section id="nosotros" className="py-32 px-6 bg-gradient-to-b from-black via-zinc-950 to-black border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="text-center mb-20"
           >
-            📱 +593 98 088 7170
-          </a>
-          <p className="text-zinc-400 mt-6 text-sm">Director General: STALIN</p>
-        </motion.div>
-        <div className="border-t border-white/10 pt-8">
-          <p className="text-zinc-600 text-xs tracking-widest uppercase">© 2026 IÓN MAX - Operaciones Globales en Expansión</p>
-          <p className="text-zinc-700 text-xs mt-2">Diseño Arquitectónico de Presencia Digital | Marca de Autoridad Global</p>
+            <h2 className="text-6xl md:text-7xl font-black tracking-tighter mb-8">
+              Somos <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">IÓN MAX</span>
+            </h2>
+            <p className="text-xl text-zinc-300 leading-relaxed">
+              No solo vendemos productos. Construimos imperios de autoridad digital.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            className="space-y-8"
+          >
+            {[
+              {
+                title: "🎯 Nuestra Misión",
+                text: "Conectar emprendedores con herramientas, conocimiento y servicios que los conviertan en autoridades en sus industrias."
+              },
+              {
+                title: "🚀 Nuestra Visión",
+                text: "Ser la plataforma de confianza número uno donde la calidad premium y la transformación real son garantizadas."
+              },
+              {
+                title: "💎 Nuestros Valores",
+                text: "Excelencia absoluta, transparencia radical, y resultados medibles. Nada mediocre. Nunca."
+              }
+            ].map((item, i) => (
+              <motion.div key={i} variants={fadeInUp} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition">
+                <h3 className="text-2xl font-black mb-4">{item.title}</h3>
+                <p className="text-zinc-300 leading-relaxed text-lg">{item.text}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
+      </section>
+
+
+      {/* FOOTER PREMIUM */}
+      <footer className="bg-gradient-to-t from-black via-zinc-950 to-black border-t border-white/5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          className="max-w-7xl mx-auto px-6 py-20"
+        >
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            {/* MARCA */}
+            <div>
+              <h3 className="text-xl font-black mb-6">⚡ IÓN MAX</h3>
+              <p className="text-zinc-500 text-sm leading-relaxed">
+                Autoridad digital. Lujo absoluto. Transformación real.
+              </p>
+              <p className="text-zinc-600 text-xs mt-4">© 2026 Operaciones Globales</p>
+            </div>
+
+            {/* MENÚ */}
+            <div>
+              <h4 className="font-black uppercase text-xs tracking-widest mb-6 text-zinc-400">Producto</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#shop" className="text-zinc-500 hover:text-white transition">🛍️ Shop</a></li>
+                <li><a href="#academy" className="text-zinc-500 hover:text-white transition">📚 Academy</a></li>
+                <li><a href="#services" className="text-zinc-500 hover:text-white transition">⚙️ Services</a></li>
+              </ul>
+            </div>
+
+            {/* LEGAL */}
+            <div>
+              <h4 className="font-black uppercase text-xs tracking-widest mb-6 text-zinc-400">Legal</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#" className="text-zinc-500 hover:text-white transition">Términos</a></li>
+                <li><a href="#" className="text-zinc-500 hover:text-white transition">Privacidad</a></li>
+                <li><a href="#" className="text-zinc-500 hover:text-white transition">Garantía</a></li>
+              </ul>
+            </div>
+
+            {/* CONTACTO */}
+            <div>
+              <h4 className="font-black uppercase text-xs tracking-widest mb-6 text-zinc-400">Contacto</h4>
+              <div className="space-y-3">
+                <a
+                  href="https://wa.me/593980887170"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-sm text-zinc-300 hover:text-white transition font-bold"
+                >
+                  📲 WhatsApp: +593 98 088 7170
+                </a>
+                <a
+                  href="mailto:gstalin110@gmail.com"
+                  className="block text-sm text-zinc-500 hover:text-white transition"
+                >
+                  ✉️ Email
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 pt-12">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              className="bg-gradient-to-r from-white/5 to-transparent backdrop-blur border border-white/10 rounded-2xl p-6 text-center"
+            >
+              <p className="text-zinc-400 text-sm mb-4">
+                Somos la marca de confianza de 10,000+ personas que transformaron sus vidas
+              </p>
+              <p className="text-xs text-zinc-600">
+                ⭐ Rating 4.9/5 — Garantía de Satisfacción 100% — Soporte 24/7
+              </p>
+            </motion.div>
+          </div>
+        </motion.div>
       </footer>
 
       {/* BOTÓN FLOTANTE MEJORADO */}
-      <motion.a 
-        href="https://wa.me/593980887170" 
+      <motion.a
+        href="https://wa.me/593980887170"
         target="_blank"
         rel="noopener noreferrer"
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.15 }}
-        className="fixed bottom-8 right-8 z-50 bg-gradient-to-br from-white to-zinc-100 text-black p-4 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(255,255,255,0.6)] transition-all duration-300 flex items-center justify-center"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 1, type: "spring" }}
+        whileHover={{ scale: 1.2, rotate: 5 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-8 right-8 z-50 bg-gradient-to-br from-white to-zinc-100 text-black p-5 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] hover:shadow-[0_0_60px_rgba(255,255,255,0.6)] transition-all duration-300 flex items-center justify-center font-black text-sm"
       >
-        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.148-.67-1.613-.916-2.207-.242-.579-.487-.5-.67-.51-.172-.008-.37-.01-.568-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a5.494 5.494 0 0 1-2.801-.768l-.201-.118-2.083.546.556-2.031-.131-.211a5.495 5.495 0 0 1-.84-2.887c0-3.033 2.467-5.501 5.5-5.501 1.465 0 2.842.57 3.875 1.605s1.605 2.41 1.605 3.875c0 3.033-2.467 5.501-5.5 5.501"/>
-        </svg>
+        💬
       </motion.a>
 
     </main>

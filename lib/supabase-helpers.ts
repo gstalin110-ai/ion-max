@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Item, AdminFormData, User } from "./types";
+import { Item, AdminFormData } from "./types";
 
 // ========== FUNCIONES DE ITEMS ==========
 

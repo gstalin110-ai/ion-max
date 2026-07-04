@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚡ IÓN MAX - Premium Platform
 
-## Getting Started
+**Plataforma premium de lujo para SHOP, ACADEMY y SERVICES.**
 
-First, run the development server:
+- 🌐 [Sitio en vivo](https://tu-dominio.com)
+- 🔐 Autenticación con Supabase
+- 📱 Diseño responsive
+- ⚙️ Panel admin CRUD
+
+## 🚀 Stack
+
+- **Next.js 16** - Framework React
+- **TypeScript** - Type safety
+- **Tailwind CSS v4** - Estilos
+- **Framer Motion** - Animaciones
+- **Supabase** - Base de datos + Auth
+- **Zod** - Validación de esquemas
+
+## 🛠️ Desarrollo
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📦 Despliegue
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Desplegado en **Vercel** con integración automática con Git.
 
-## Learn More
+## 📝 Variables de Entorno
 
-To learn more about Next.js, take a look at the following resources:
+```
+NEXT_PUBLIC_SUPABASE_URL=your_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📂 Estructura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+├── page.tsx           # Página pública (shop, academy, services)
+├── admin/page.tsx     # Panel de administración
+└── carrito/page.tsx   # Carrito de compras
 
-## Deploy on Vercel
+lib/
+├── supabase.ts        # Cliente Supabase
+├── supabase-helpers.ts # Funciones CRUD
+├── types.ts           # Tipos TypeScript
+└── validation.ts      # Esquemas Zod
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📄 Licencia
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Privado © 2026 IÓN MAX
