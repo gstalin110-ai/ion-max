@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false;
-      authListener.subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: fullName ? { data: { full_name: fullName } } : undefined,
+          options: fullName ? { data: { nombre_completo: fullName } } : undefined,
         });
         if (error) throw error;
         router.push("/dashboard");
