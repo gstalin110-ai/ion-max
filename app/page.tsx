@@ -83,42 +83,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black scroll-smooth">
-      
-      {/* NAVBAR PREMIUM */}
-      <nav className="fixed top-0 left-0 w-full bg-black/70 backdrop-blur-2xl border-b border-white/5 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-4"
-          >
-            <div className="relative h-10 w-10">
-              <Image src="/logo.png" alt="Ion Max logo" fill className="object-contain" />
-            </div>
-            <span className="text-xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-              IÓN MAX
-            </span>
-          </motion.div>
-          <div className="hidden md:flex gap-6 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-            {shopItems.length > 0 && <a href="#shop" className="hover:text-white transition duration-300">Shop</a>}
-            {academyItems.length > 0 && <a href="#academy" className="hover:text-white transition duration-300">Academy</a>}
-            {serviceItems.length > 0 && <a href="#services" className="hover:text-white transition duration-300">Services</a>}
-            <Link href="/marketplace" className="hover:text-white transition duration-300">Marketplace</Link>
-            <Link href="/dashboard" className="hover:text-white transition duration-300">Dashboard</Link>
-            <a href="#confianza" className="hover:text-white transition duration-300">Confianza</a>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="hidden rounded-full border border-white/20 px-4 py-2 text-[10px] font-black uppercase tracking-[0.25em] text-zinc-300 transition hover:border-white hover:text-white sm:inline-flex">
-              Panel
-            </Link>
-            <Link href="/carrito" className="bg-gradient-to-r from-white to-zinc-200 text-black px-5 py-2 rounded-full font-black text-xs hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition uppercase tracking-wider">
-              🛒 {cart.length}
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO BRUTAL */}
       <section className="min-h-screen relative flex flex-col justify-center items-center pt-20 px-6 overflow-hidden">
         {/* FONDO ANIMADO */}
         <div className="absolute inset-0 -z-10">

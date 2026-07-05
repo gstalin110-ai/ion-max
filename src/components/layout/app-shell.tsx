@@ -3,25 +3,29 @@
 import Link from "next/link";
 import { BarChart3, BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Package, Search, Settings, ShoppingBag, Sparkles, UserCircle2 } from "lucide-react";
 import { useAppStore } from "@/src/store/app-store";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
-  { label: "Publicar", href: "/publish", icon: Sparkles },
-  { label: "Productos", href: "/products", icon: Package },
-  { label: "Servicios", href: "/services", icon: Sparkles },
-  { label: "Cursos", href: "/courses", icon: BarChart3 },
-  { label: "Empleos", href: "/jobs", icon: BriefcaseBusiness },
-  { label: "Empresas", href: "/companies", icon: Building2 },
-  { label: "Favoritos", href: "/favorites", icon: Heart },
-  { label: "Mensajes", href: "/messages", icon: MessageSquare },
-  { label: "Billetera", href: "/wallet", icon: CreditCard },
-  { label: "Perfil", href: "/profile", icon: UserCircle2 },
-  { label: "Configuración", href: "/settings", icon: Settings },
-];
+import { useAuth } from "@/src/contexts/auth-context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { isSidebarOpen, setSidebarOpen } = useAppStore();
+  useAuth();
+
+  const baseNav = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+    { label: "Publicar", href: "/publish", icon: Sparkles },
+    { label: "Productos", href: "/products", icon: Package },
+    { label: "Servicios", href: "/services", icon: Sparkles },
+    { label: "Cursos", href: "/courses", icon: BarChart3 },
+    { label: "Empleos", href: "/jobs", icon: BriefcaseBusiness },
+    { label: "Empresas", href: "/companies", icon: Building2 },
+    { label: "Favoritos", href: "/favorites", icon: Heart },
+    { label: "Mensajes", href: "/messages", icon: MessageSquare },
+    { label: "Billetera", href: "/wallet", icon: CreditCard },
+    { label: "Perfil", href: "/profile", icon: UserCircle2 },
+    { label: "Configuración", href: "/settings", icon: Settings },
+  ];
+
+  const navItems = baseNav;
 
   return (
     <div className="min-h-screen bg-black text-white">

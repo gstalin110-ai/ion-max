@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { GlobalNav } from "@/src/components/layout/global-nav";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,7 +39,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <RootProviders>{children}</RootProviders>
+          <RootProviders>
+            <GlobalNav />
+            <div className="pt-16">{children}</div>
+          </RootProviders>
         </AuthProvider>
       </body>
     </html>
