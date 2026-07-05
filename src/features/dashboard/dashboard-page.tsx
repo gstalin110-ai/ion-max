@@ -1,16 +1,23 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, CreditCard, Heart, MessageSquare, Package, Sparkles } from "lucide-react";
-
-const stats = [
-  { label: "Saldo disponible", value: "$12,480", hint: "+8.2% vs mes anterior" },
-  { label: "Ingresos", value: "$24,900", hint: "+12.4%" },
-  { label: "Pedidos", value: "184", hint: "14 pendientes" },
-  { label: "Favoritos", value: "39", hint: "Guardados" },
-];
+import { getDashboardStats } from "@/src/services/account";
 
 export function DashboardPage() {
+  const { data: dashboard = null, isLoading } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: getDashboardStats,
+  });
+
+  const stats = [
+    { label: "Productos", value: dashboard ? dashboard.products.toString() : "—", hint: "Publicaciones activas" },
+    { label: "Servicios", value: dashboard ? dashboard.services.toString() : "—", hint: "Ofertas disponibles" },
+    { label: "Cursos", value: dashboard ? dashboard.courses.toString() : "—", hint: "Capacitaciones" },
+    { label: "Mensajería", value: dashboard ? dashboard.messages.toString() : "—", hint: "Conversaciones abiertas" },
+  ];
+
   return (
     <div className="space-y-8">
       <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-8">
@@ -18,7 +25,7 @@ export function DashboardPage() {
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Dashboard premium</p>
             <h1 className="mt-3 text-4xl font-black">Tu ecosistema de ventas y servicios</h1>
-            <p className="mt-3 max-w-2xl text-sm text-zinc-400">Control total de tus publicaciones, billetes, ventas, mensajes y ganancias desde un solo lugar.</p>
+            <p className="mt-3 max-w-2xl text-sm text-zinc-400">Control total de tus publicaciones, billetera, ventas, mensajes y ganancias desde un solo lugar.</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-zinc-300">
             <p className="text-zinc-500">Estado</p>
@@ -44,11 +51,13 @@ export function DashboardPage() {
             <button className="text-sm text-zinc-500">Ver todo</button>
           </div>
           <div className="space-y-4">
-            {[
-              { title: "Nuevo pedido recibido", meta: "hace 5 min" },
-              { title: "Curso publicado", meta: "hace 2 horas" },
-              { title: "Pago aprobado", meta: "hace 4 horas" },
-            ].map((item) => (
+            {(isLoading ? [
+              { title: "Actualizando métricas...", meta: "Espere un momento" },
+            ] : [
+              { title: `Pedidos totales: ${dashboard?.orders ?? 0}`, meta: `Ventas: ${dashboard?.sales ?? 0}` },
+              { title: `Favoritos guardados: ${dashboard?.favorites ?? 0}`, meta: `Mensajes: ${dashboard?.messages ?? 0}` },
+              { title: `Productos activos: ${dashboard?.products ?? 0}`, meta: `Servicios activos: ${dashboard?.services ?? 0}` },
+            ]).map((item) => (
               <div key={item.title} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
                 <div>
                   <p className="font-bold">{item.title}</p>
@@ -72,10 +81,10 @@ export function DashboardPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
             {[
-              { label: "Productos publicados", value: "24", icon: Package },
-              { label: "Favoritos", value: "39", icon: Heart },
-              { label: "Mensajes", value: "11", icon: MessageSquare },
-              { label: "Billetera", value: "$12.4k", icon: CreditCard },
+              { label: "Productos publicados", value: dashboard ? dashboard.products.toString() : "—", icon: Package },
+              { label: "Favoritos", value: dashboard ? dashboard.favorites.toString() : "—", icon: Heart },
+              { label: "Mensajes", value: dashboard ? dashboard.messages.toString() : "—", icon: MessageSquare },
+              { label: "Ventas", value: dashboard ? dashboard.sales.toString() : "—", icon: CreditCard },
             ].map((card) => {
               const Icon = card.icon;
               return (

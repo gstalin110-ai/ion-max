@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { Item, AdminFormData } from "../../lib/types";
 import { getItems, createItem, updateItem, deleteItem } from "../../lib/supabase-helpers";
+import { getDashboardStats, type DashboardStats } from "@/src/services/account";
 import { AdminFormSchema } from "../../lib/validation";
 import { motion } from "framer-motion";
 import { z } from "zod";
@@ -10,6 +11,7 @@ import { z } from "zod";
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<Item[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardStats | null>(null);
   const [processing, setProcessing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -36,14 +38,23 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const loadDashboard = useCallback(async () => {
+    try {
+      const stats = await getDashboardStats();
+      setDashboard(stats);
+    } catch (err) {
+      console.warn("No se pudieron obtener métricas completas:", err);
+    }
+  }, []);
+
   // Verificar autenticación
   useEffect(() => {
     async function initialize() {
-      await loadItems();
+      await Promise.all([loadItems(), loadDashboard()]);
       setIsLoading(false);
     }
     initialize();
-  }, [loadItems]);
+  }, [loadItems, loadDashboard]);
 
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
@@ -165,15 +176,15 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-3">
               <p className="text-blue-400 text-xs font-bold uppercase tracking-wider">🛍️ Productos</p>
-              <p className="text-2xl font-black text-blue-300">{shopItems}</p>
+              <p className="text-2xl font-black text-blue-300">{dashboard ? dashboard.products : shopItems}</p>
             </div>
             <div className="bg-purple-600/10 border border-purple-600/30 rounded-lg p-3">
               <p className="text-purple-400 text-xs font-bold uppercase tracking-wider">📚 Cursos</p>
-              <p className="text-2xl font-black text-purple-300">{academyItems}</p>
+              <p className="text-2xl font-black text-purple-300">{dashboard ? dashboard.courses : academyItems}</p>
             </div>
             <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-3">
               <p className="text-green-400 text-xs font-bold uppercase tracking-wider">⚙️ Servicios</p>
-              <p className="text-2xl font-black text-green-300">{serviceItems}</p>
+              <p className="text-2xl font-black text-green-300">{dashboard ? dashboard.services : serviceItems}</p>
             </div>
           </div>
         </div>
