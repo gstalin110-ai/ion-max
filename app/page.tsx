@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Item } from "../lib/types";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 
 const fadeInUp = {
@@ -89,9 +90,14 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent"
+            className="flex items-center gap-4"
           >
-            ⚡ IÓN MAX
+            <div className="relative h-10 w-10">
+              <Image src="/logo.png" alt="Ion Max logo" fill className="object-contain" />
+            </div>
+            <span className="text-xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+              IÓN MAX
+            </span>
           </motion.div>
           <div className="hidden md:flex gap-6 text-xs font-bold text-zinc-500 uppercase tracking-widest">
             {shopItems.length > 0 && <a href="#shop" className="hover:text-white transition duration-300">Shop</a>}
@@ -140,8 +146,11 @@ export default function Home() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-none"
-          >
-            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
+          >            <div className="mx-auto mb-8 h-32 w-32 rounded-full border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20">
+              <div className="relative h-full w-full">
+                <Image src="/logo.png" alt="Logo Ion Max" fill className="object-contain" />
+              </div>
+            </div>            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
               ELEVA TU
             </span>
             <br />
@@ -572,7 +581,12 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             {/* MARCA */}
             <div>
-              <h3 className="text-xl font-black mb-6">⚡ IÓN MAX</h3>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="relative h-12 w-12">
+                  <Image src="/logo.png" alt="Ion Max logo" fill className="object-contain" />
+                </div>
+                <p className="text-xl font-black uppercase tracking-[0.24em] text-white">IÓN MAX</p>
+              </div>
               <p className="text-zinc-500 text-sm leading-relaxed">
                 Autoridad digital. Lujo absoluto. Transformación real.
               </p>

@@ -6,13 +6,29 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/src/contexts/auth-context";
 
-const schema = z.object({
+const loginSchema = z.object({
+  email: z.string().email("Ingresa un correo válido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+});
+
+const registerSchema = z.object({
   email: z.string().email("Ingresa un correo válido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   fullName: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof schema>;
+const resetRequestSchema = z.object({
+  email: z.string().email("Ingresa un correo válido"),
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
+type RegisterValues = z.infer<typeof registerSchema>;
+
+type FormValues = {
+  email: string;
+  password?: string;
+  fullName?: string;
+};
 
 interface AuthFormProps {
   mode: "login" | "register" | "reset";
@@ -23,9 +39,25 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const schema = useMemo(() => {
+    if (mode === "login") return loginSchema;
+    if (mode === "register") return registerSchema;
+    return resetRequestSchema;
+  }, [mode]) as typeof loginSchema | typeof registerSchema | typeof resetRequestSchema;
+
+  const defaultValues = useMemo(() => {
+    if (mode === "login") return { email: "", password: "" };
+    if (mode === "register") return { email: "", password: "", fullName: "" };
+    return { email: "" };
+  }, [mode]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "", fullName: "" },
+    defaultValues,
   });
 
   const title = useMemo(() => {
@@ -46,12 +78,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (mode === "register") {
-        await signUp(values.email, values.password, values.fullName);
+        const registerValues = values as RegisterValues;
+        await signUp(registerValues.email, registerValues.password, registerValues.fullName);
         setStatus("Cuenta creada. Bienvenido a IÓN MAX.");
         return;
       }
 
-      await signIn(values.email, values.password);
+      const loginValues = values as LoginValues;
+      await signIn(loginValues.email, loginValues.password);
       setStatus("Sesión iniciada correctamente.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error");
@@ -76,14 +110,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       <div>
         <label className="mb-1 block text-sm text-zinc-400">Correo</label>
         <input type="email" {...register("email")} className="w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-sm" placeholder="correo@empresa.com" />
-        {errors.email && <p className="mt-1 text-sm text-rose-400">{errors.email.message}</p>}
+        {errors.email?.message && <p className="mt-1 text-sm text-rose-400">{String(errors.email.message)}</p>}
       </div>
 
       {mode !== "reset" && (
         <div>
           <label className="mb-1 block text-sm text-zinc-400">Contraseña</label>
           <input type="password" {...register("password")} className="w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-sm" placeholder="••••••••" />
-          {errors.password && <p className="mt-1 text-sm text-rose-400">{errors.password.message}</p>}
+          {errors.password?.message && <p className="mt-1 text-sm text-rose-400">{String(errors.password.message)}</p>}
         </div>
       )}
 

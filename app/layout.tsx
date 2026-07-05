@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "IÓN MAX - Lujo, Educación & Servicios",
   description: "La marca que redefine la autoridad digital. Productos premium, cursos innovadores y servicios de alto valor.",
   keywords: "lujo, tecnología, cursos online, servicios digitales, autoridad online",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
