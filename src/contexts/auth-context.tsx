@@ -23,9 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true;
 
     async function initialize() {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getUser();
       if (active) {
-        setUser(data.session?.user ?? null);
+        setUser(data.user ?? null);
         setLoading(false);
       }
     }
