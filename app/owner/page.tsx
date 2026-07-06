@@ -11,7 +11,14 @@ export default function OwnerRoute() {
   const ownerEmail = process.env.NEXT_PUBLIC_OWNER_EMAIL;
 
   useEffect(() => {
-    if (!loading && user && user.email !== ownerEmail) {
+    if (loading) return;
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (user.email !== ownerEmail) {
       router.replace("/");
     }
   }, [loading, router, user, ownerEmail]);

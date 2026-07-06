@@ -52,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn: async (email, password) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.push("/dashboard");
       },
       signUp: async (email, password, fullName) => {
         const { error } = await supabase.auth.signUp({
@@ -61,11 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           options: fullName ? { data: { nombre_completo: fullName } } : undefined,
         });
         if (error) throw error;
-        router.push("/dashboard");
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        router.refresh();
         router.push("/login");
       },
       resetPassword: async (email) => {
