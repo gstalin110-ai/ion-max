@@ -52,7 +52,7 @@ export interface OwnerSummary {
   users: number;
   admins: number;
   activeUsers: number;
-  items: number;
+  listings: number;
   orders: number;
   sales: number;
   auditEntries: number;
@@ -60,11 +60,11 @@ export interface OwnerSummary {
 }
 
 export async function getOwnerSummary(): Promise<OwnerSummary> {
-  const [users, admins, activeUsers, items, orders, sales, auditEntries, settingsCount] = await Promise.all([
+  const [users, admins, activeUsers, listings, orders, sales, auditEntries, settingsCount] = await Promise.all([
     countTable("profiles"),
     countTable("profiles", { role: "admin" }),
     countTable("profiles", { active: true }),
-    countTable("items"),
+    countTable("listings"),
     countTable("orders"),
     countTable("sales"),
     countTable("audit_logs"),
@@ -75,7 +75,7 @@ export async function getOwnerSummary(): Promise<OwnerSummary> {
     users,
     admins,
     activeUsers,
-    items,
+    listings,
     orders,
     sales,
     auditEntries,

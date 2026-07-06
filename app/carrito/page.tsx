@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Item } from "../../lib/types";
+import { Listing } from "../../lib/types";
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<Item[]>([]);
+  const [cartItems, setCartItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function CartPage() {
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.precio, 0);
+  const total = cartItems.reduce((sum, item) => sum + item.price, 0);
 
   if (loading) {
     return (
@@ -96,8 +96,8 @@ export default function CartPage() {
                   <div className="w-32 h-32 flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={item.imagen_url}
-                      alt={item.nombre}
+                      src={item.images?.[0] || "/placeholder.png"}
+                      alt={item.title}
                       className="w-full h-full object-cover rounded-xl"
                       onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                     />
@@ -108,17 +108,17 @@ export default function CartPage() {
                     <div>
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="text-xl font-bold">{item.nombre}</h3>
-                          <p className="text-zinc-400 text-sm mt-1">{item.descripcion.substring(0, 80)}...</p>
+                          <h3 className="text-xl font-bold">{item.title}</h3>
+                          <p className="text-zinc-400 text-sm mt-1">{item.description.substring(0, 80)}...</p>
                         </div>
                         <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          {item.categoria}
+                          {item.category_name || "General"}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-2xl font-black">${item.precio}</span>
+                      <span className="text-2xl font-black">${item.price}</span>
                       <button
                         onClick={() => removeFromCart(item.id)}
                         className="bg-red-600/20 hover:bg-red-600/40 border border-red-600/50 text-red-400 px-6 py-2 rounded-lg font-bold text-xs transition uppercase tracking-wider"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Item } from "../lib/types";
+import { Listing } from "../lib/types";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,9 +23,9 @@ const scaleIn = {
 };
 
 export default function Home() {
-  const [items, setItems] = useState<Item[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cart] = useState<Item[]>(() => {
+  const [cart] = useState<Listing[]>(() => {
     if (typeof window === "undefined") return [];
     const savedCart = localStorage.getItem("ion-cart");
     return savedCart ? JSON.parse(savedCart) : [];
@@ -41,11 +41,12 @@ export default function Home() {
       setLoading(true);
       try {
         const { data } = await supabase
-          .from("items")
+          .from("listings")
           .select("*")
+          .eq("status", "active")
           .order("created_at", { ascending: false });
         
-        if (data) setItems(data);
+        if (data) setListings(data);
       } catch (error) {
         console.error("Error cargando datos:", error);
       }
@@ -54,9 +55,9 @@ export default function Home() {
     cargarDatos();
   }, []);
 
-  const shopItems = items.filter(i => i.categoria === 'SHOP');
-  const academyItems = items.filter(i => i.categoria === 'ACADEMY');
-  const serviceItems = items.filter(i => i.categoria === 'SERVICES');
+  const shopItems = listings.filter(i => i.category_name === 'product' || i.category_name === 'SHOP');
+  const academyItems = listings.filter(i => i.category_name === 'course' || i.category_name === 'ACADEMY');
+  const serviceItems = listings.filter(i => i.category_name === 'service' || i.category_name === 'SERVICES');
 
   const toggleWishlist = (id: string) => {
     setWishlist(prev => {
@@ -170,7 +171,7 @@ export default function Home() {
             className="grid grid-cols-3 gap-4 mt-20 max-w-md mx-auto text-center"
           >
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
-              <p className="text-2xl font-black">{items.length}+</p>
+              <p className="text-2xl font-black">{listings.length}+</p>
               <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Productos</p>
             </div>
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
@@ -253,10 +254,10 @@ export default function Home() {
                   className="group relative bg-gradient-to-br from-blue-950/30 to-black border border-blue-500/20 rounded-3xl overflow-hidden hover:border-blue-400/50 transition-all duration-500"
                 >
                   {/* BADGE */}
-                  {product.etiqueta && (
+                  {product.tags && product.tags.length > 0 && (
                     <div className="absolute top-6 right-6 z-20">
                       <span className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg">
-                        {product.etiqueta}
+                        {product.tags[0]}
                       </span>
                     </div>
                   )}
@@ -273,8 +274,8 @@ export default function Home() {
                   <div className="relative overflow-hidden h-80">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={product.imagen_url}
-                      alt={product.nombre}
+                      src={product.images?.[0] || "/placeholder.png"}
+                      alt={product.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
                       onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                     />
@@ -283,27 +284,22 @@ export default function Home() {
 
                   {/* CONTENIDO */}
                   <div className="p-8">
-                    <h3 className="text-2xl font-black tracking-tight mb-2 group-hover:text-blue-400 transition">{product.nombre}</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed mb-6 line-clamp-2">{product.descripcion}</p>
+                    <h3 className="text-2xl font-black tracking-tight mb-2 group-hover:text-blue-400 transition">{product.title}</h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed mb-6 line-clamp-2">{product.description}</p>
 
                     {/* PRECIO Y STOCK */}
                     <div className="flex items-end justify-between mb-6">
                       <div>
-                        <p className="text-4xl font-black text-blue-400">${product.precio}</p>
-                        {product.stock && product.stock < 5 && (
-                          <p className="text-xs text-red-400 font-black mt-2 uppercase tracking-wider">⚠️ Solo {product.stock} disponibles</p>
-                        )}
+                        <p className="text-4xl font-black text-blue-400">${product.price}</p>
                       </div>
                     </div>
 
                     {/* CTA */}
                     <a
-                      href={product.enlace_externo}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/listing/${product.id}`}
                       className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300 uppercase text-sm tracking-wider block text-center group-hover:scale-105 transform"
                     >
-                      Adquirir Ahora →
+                      Ver Detalles →
                     </a>
                   </div>
                 </motion.div>
@@ -347,8 +343,8 @@ export default function Home() {
                   <div className="flex-shrink-0 w-full md:w-48 h-48 rounded-xl overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={course.imagen_url}
-                      alt={course.nombre}
+                      src={course.images?.[0] || "/placeholder.png"}
+                      alt={course.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => (e.currentTarget.src = "/placeholder.png")}
                     />
@@ -356,30 +352,23 @@ export default function Home() {
 
                   {/* CONTENIDO */}
                   <div className="flex-1">
-                    {course.etiqueta && (
+                    {course.tags && course.tags.length > 0 && (
                       <span className="text-xs font-black uppercase tracking-widest text-purple-400 mb-3 inline-block">
-                        ✨ {course.etiqueta}
+                        ✨ {course.tags[0]}
                       </span>
                     )}
-                    <h3 className="text-3xl font-black mb-3 group-hover:text-purple-400 transition">{course.nombre}</h3>
-                    <p className="text-zinc-400 mb-6 leading-relaxed">{course.descripcion}</p>
+                    <h3 className="text-3xl font-black mb-3 group-hover:text-purple-400 transition">{course.title}</h3>
+                    <p className="text-zinc-400 mb-6 leading-relaxed">{course.description}</p>
 
                     <div className="flex flex-wrap items-center gap-6 mb-6">
                       <div>
-                        <p className="text-3xl font-black text-purple-400">${course.precio}</p>
+                        <p className="text-3xl font-black text-purple-400">${course.price}</p>
                         <p className="text-xs text-zinc-500 mt-1">Acceso de por vida</p>
                       </div>
-                      {course.stock && (
-                        <div className="bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                          <p className="text-xs text-zinc-400">📊 {course.stock} inscritos</p>
-                        </div>
-                      )}
                     </div>
 
                     <a
-                      href={course.enlace_externo}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/listing/${course.id}`}
                       className="inline-block bg-gradient-to-r from-purple-600 to-purple-500 text-white font-black py-3 px-8 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all uppercase text-sm tracking-wider group-hover:scale-105 transform"
                     >
                       Inscribirse Ahora →
@@ -426,28 +415,26 @@ export default function Home() {
                     <div className="w-14 h-14 bg-green-600/20 border border-green-500/40 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-green-600/40 transition mb-6">
                       ⚙️
                     </div>
-                    {service.etiqueta && (
+                    {service.tags && service.tags.length > 0 && (
                       <span className="text-xs font-black uppercase tracking-widest text-green-400 mb-3 inline-block">
-                        {service.etiqueta}
+                        {service.tags[0]}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-2xl font-black mb-3 group-hover:text-green-400 transition">{service.nombre}</h3>
-                  <p className="text-zinc-400 flex-1 mb-8 leading-relaxed">{service.descripcion}</p>
+                  <h3 className="text-2xl font-black mb-3 group-hover:text-green-400 transition">{service.title}</h3>
+                  <p className="text-zinc-400 flex-1 mb-8 leading-relaxed">{service.description}</p>
 
                   <div className="mb-8">
-                    <p className="text-3xl font-black text-green-400 mb-2">${service.precio}</p>
+                    <p className="text-3xl font-black text-green-400 mb-2">${service.price}</p>
                     <p className="text-xs text-zinc-500">Consultoría + Implementación</p>
                   </div>
 
                   <a
-                    href={service.enlace_externo}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/listing/${service.id}`}
                     className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transition-all duration-300 uppercase text-sm tracking-wider group-hover:scale-105 transform text-center"
                   >
-                    Solicitar Consulta →
+                    Ver Detalles →
                   </a>
                 </motion.div>
               ))}

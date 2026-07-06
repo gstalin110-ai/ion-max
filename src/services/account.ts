@@ -123,9 +123,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   if (userError) throw userError;
   const [products, services, courses, messages, favorites, orders, sales, wallet] = await Promise.all([
-    countTable("items", { categoria: "SHOP" }),
-    countTable("items", { categoria: "SERVICES" }),
-    countTable("items", { categoria: "ACADEMY" }),
+    countTable("listings", { status: "active", category_name: "SHOP" }),
+    countTable("listings", { status: "active", category_name: "SERVICES" }),
+    countTable("listings", { status: "active", category_name: "ACADEMY" }),
     user?.id ? countTable("messages", { receiver_id: user.id }) : Promise.resolve(0),
     user?.id ? countTable("favorites", { user_id: user.id }) : Promise.resolve(0),
     user?.id ? countTable("orders", { buyer_id: user.id }) : Promise.resolve(0),

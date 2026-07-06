@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
-import { Item } from "./types";
+import { Listing } from "./types";
 
 interface CartContextType {
-  items: Item[];
+  items: Listing[];
   wishlist: string[];
-  addToCart: (item: Item) => void;
+  addToCart: (item: Listing) => void;
   removeFromCart: (id: string) => void;
   toggleWishlist: (id: string) => void;
   clearCart: () => void;
@@ -26,11 +26,11 @@ function initializeWishlist() {
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<Item[]>(initializeCart);
+  const [items, setItems] = useState<Listing[]>(initializeCart);
   const [wishlist, setWishlist] = useState<string[]>(initializeWishlist);
 
 
-  const addToCart = (item: Item) => {
+  const addToCart = (item: Listing) => {
     const updated = [...items, item];
     setItems(updated);
     localStorage.setItem("ion-cart", JSON.stringify(updated));
@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("ion-cart");
   };
 
-  const getTotal = () => items.reduce((sum, item) => sum + item.precio, 0);
+  const getTotal = () => items.reduce((sum, item) => sum + item.price, 0);
 
   return (
     <CartContext.Provider value={{ items, wishlist, addToCart, removeFromCart, toggleWishlist, clearCart, getTotal }}>

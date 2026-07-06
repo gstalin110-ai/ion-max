@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
-import { getItems } from "@/src/services/items";
+import { getListings } from "@/lib/supabase-helpers";
 import { useAppStore } from "@/src/store/app-store";
 import { motion } from "framer-motion";
 import { Heart, Search, Sparkles } from "lucide-react";
@@ -20,15 +20,15 @@ export function MarketplacePage() {
     }
   });
 
-  const { data: items = [], isLoading } = useQuery({ queryKey: ["items"], queryFn: getItems });
+  const { data: listings = [], isLoading } = useQuery({ queryKey: ["listings"], queryFn: getListings });
 
-  const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const matchesCategory = selectedCategory === "ALL" || item.categoria === selectedCategory;
-      const matchesSearch = item.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || item.descripcion.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredListings = useMemo(() => {
+    return listings.filter((item) => {
+      const matchesCategory = selectedCategory === "ALL" || item.category_name === selectedCategory;
+      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     });
-  }, [items, searchQuery, selectedCategory]);
+  }, [listings, searchQuery, selectedCategory]);
 
   const toggleWishlist = (id: string) => {
     const next = wishlist.includes(id) ? wishlist.filter((x) => x !== id) : [...wishlist, id];
@@ -64,29 +64,29 @@ export function MarketplacePage() {
         <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-10 text-center text-zinc-500">Cargando marketplace...</div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          {filteredItems.map((item) => (
+          {filteredListings.map((item) => (
             <motion.article key={item.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80">
               <div className="relative h-48 overflow-hidden">
-                <Image src={item.imagen_url || "/placeholder.png"} alt={item.nombre} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-110" unoptimized />
+                <Image src={item.images?.[0] || "/placeholder.png"} alt={item.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-110" unoptimized />
                 <button onClick={() => toggleWishlist(item.id)} className="absolute left-4 top-4 rounded-full bg-black/70 p-2 text-white">
                   <Heart className={`h-4 w-4 ${wishlist.includes(item.id) ? "fill-red-500 text-red-500" : "text-white"}`} />
                 </button>
               </div>
               <div className="space-y-4 p-6">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-zinc-500">{item.categoria}</span>
-                  <span className="text-sm font-black text-white">${item.precio}</span>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-zinc-500">{item.category_name || "General"}</span>
+                  <span className="text-sm font-black text-white">${item.price}</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-black">{item.nombre}</h3>
-                  <p className="mt-2 text-sm text-zinc-400">{item.descripcion}</p>
+                  <h3 className="text-xl font-black">{item.title}</h3>
+                  <p className="mt-2 text-sm text-zinc-400">{item.description}</p>
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2 text-sm text-zinc-500">
                     <Sparkles className="h-4 w-4" />
                     Premium
                   </div>
-                  <a href={item.enlace_externo} target="_blank" rel="noreferrer" className="rounded-full bg-white px-4 py-2 text-sm font-black text-black">Ver más</a>
+                  <a href={`/listing/${item.id}`} className="rounded-full bg-white px-4 py-2 text-sm font-black text-black">Ver más</a>
                 </div>
               </div>
             </motion.article>

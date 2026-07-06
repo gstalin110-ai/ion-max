@@ -1,14 +1,11 @@
-import { supabase } from "@/src/lib/supabase-client";
-import type { Item } from "@/src/types";
+import { getListings } from "@/lib/supabase-helpers";
+import type { Listing } from "@/lib/types";
 
 export async function getItems() {
-  const { data, error } = await supabase.from("items").select("*").order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as Item[];
+  return await getListings();
 }
 
-export async function getItemsByCategory(categoria: string) {
-  const { data, error } = await supabase.from("items").select("*").eq("categoria", categoria).order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return data as Item[];
+export async function getItemsByCategory(category: string) {
+  const allListings = await getListings();
+  return allListings.filter(listing => listing.category_name === category);
 }

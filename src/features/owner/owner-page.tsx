@@ -12,7 +12,7 @@ export function OwnerPage() {
     users: 0,
     admins: 0,
     activeUsers: 0,
-    items: 0,
+    listings: 0,
     orders: 0,
     sales: 0,
     auditEntries: 0,
@@ -122,7 +122,7 @@ export function OwnerPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Flujo comercial</p>
           <div className="mt-5 grid gap-4">
             {[
-              { label: "Items", value: summary.items },
+              { label: "Listings", value: summary.listings },
               { label: "Pedidos", value: summary.orders },
               { label: "Ventas", value: summary.sales },
               { label: "Auditoría", value: summary.auditEntries },
