@@ -1,18 +1,52 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/contexts/auth-context";
+import { supabase } from "@/src/lib/supabase/client";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/login");
+    let active = true;
+
+    async function verify() {
+      if (loading) return;
+
+      if (user) {
+        if (active) {
+          setAllowed(true);
+          setChecking(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+
+      if (data.session?.user) {
+        setAllowed(true);
+        setChecking(false);
+        return;
+      }
+
+      setAllowed(false);
+      setChecking(false);
+      router.replace("/login");
+    }
+
+    void verify();
+
+    return () => {
+      active = false;
+    };
   }, [loading, router, user]);
 
-  if (loading) {
+  if (loading || checking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black text-white">
         <div className="text-center">
@@ -23,7 +57,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!allowed) return null;
 
   return <>{children}</>;
 }

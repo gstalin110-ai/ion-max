@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +36,6 @@ interface AuthFormProps {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const { signIn, signUp, resetPassword } = useAuth();
-  const router = useRouter();
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,15 +80,16 @@ export function AuthForm({ mode }: AuthFormProps) {
       if (mode === "register") {
         const registerValues = values as RegisterValues;
         await signUp(registerValues.email, registerValues.password, registerValues.fullName);
-        router.refresh();
-        router.push("/comunidad");
+        window.location.href = "/comunidad";
         return;
       }
 
       const loginValues = values as LoginValues;
       await signIn(loginValues.email, loginValues.password);
-      router.refresh();
-      router.push("/comunidad");
+      const next = new URLSearchParams(window.location.search).get("next");
+      const destination =
+        next && next.startsWith("/") && !next.startsWith("/login") ? next : "/comunidad";
+      window.location.href = destination;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error");
     }

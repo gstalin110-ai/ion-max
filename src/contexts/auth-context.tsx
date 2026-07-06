@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -19,7 +18,6 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     let active = true;
@@ -50,8 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       signIn: async (email, password) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        if (!data.session) {
+          throw new Error("No se pudo establecer la sesión. Intenta de nuevo.");
+        }
       },
       signUp: async (email, password, fullName) => {
         const { error } = await supabase.auth.signUp({
@@ -64,8 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
-        router.refresh();
-        router.push("/login");
+        window.location.href = "/login";
       },
       resetPassword: async (email) => {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
       },
     }),
-    [loading, router, user]
+    [loading, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

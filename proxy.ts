@@ -1,43 +1,9 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isOwnerEmail } from "@/lib/constants";
-
-function copyCookies(from: NextResponse, to: NextResponse) {
-  from.cookies.getAll().forEach(({ name, value }) => {
-    to.cookies.set(name, value);
-  });
-}
+import { redirectWithSessionCookies, refreshSupabaseSession } from "@/lib/supabase/proxy-session";
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { supabaseResponse, user } = await refreshSupabaseSession(request);
   const pathname = request.nextUrl.pathname;
 
   const protectedPaths = [
@@ -51,45 +17,40 @@ export async function proxy(request: NextRequest) {
     "/marketplace",
   ];
   const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
-
   const isAdminPath = pathname.startsWith("/admin");
-  const isLegacyOwnerPath = pathname.startsWith("/owner");
-  const isLegacyMessagesPath = pathname.startsWith("/messages");
+  const isAuthPath = pathname === "/login" || pathname === "/register";
+  const isPublicAuthRoute =
+    pathname.startsWith("/auth") || pathname.startsWith("/reset-password");
 
-  const authPaths = ["/login", "/register"];
-  const isAuthPath = authPaths.some((path) => pathname.startsWith(path));
-
-  if (isLegacyOwnerPath) {
-    const redirect = NextResponse.redirect(new URL("/admin", request.url));
-    copyCookies(response, redirect);
-    return redirect;
+  if (pathname.startsWith("/owner")) {
+    return redirectWithSessionCookies(new URL("/admin", request.url), supabaseResponse);
   }
 
-  if (isLegacyMessagesPath) {
-    const redirect = NextResponse.redirect(new URL("/mensajes", request.url));
-    copyCookies(response, redirect);
-    return redirect;
+  if (pathname.startsWith("/messages")) {
+    return redirectWithSessionCookies(new URL("/mensajes", request.url), supabaseResponse);
   }
 
   if (!user && (isProtectedPath || isAdminPath)) {
-    const redirect = NextResponse.redirect(new URL("/login", request.url));
-    copyCookies(response, redirect);
-    return redirect;
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return redirectWithSessionCookies(loginUrl, supabaseResponse);
   }
 
   if (user && isAuthPath) {
-    const redirect = NextResponse.redirect(new URL("/comunidad", request.url));
-    copyCookies(response, redirect);
-    return redirect;
+    const next = request.nextUrl.searchParams.get("next");
+    const destination = next && next.startsWith("/") ? next : "/comunidad";
+    return redirectWithSessionCookies(new URL(destination, request.url), supabaseResponse);
   }
 
   if (user && isAdminPath && !isOwnerEmail(user.email)) {
-    const redirect = NextResponse.redirect(new URL("/comunidad", request.url));
-    copyCookies(response, redirect);
-    return redirect;
+    return redirectWithSessionCookies(new URL("/comunidad", request.url), supabaseResponse);
   }
 
-  return response;
+  if (isPublicAuthRoute) {
+    return supabaseResponse;
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
