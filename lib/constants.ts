@@ -1,5 +1,5 @@
 export const OWNER_EMAIL = (
-  process.env.NEXT_PUBLIC_OWNER_EMAIL ?? "gstalin@gmail.com"
+  process.env.NEXT_PUBLIC_OWNER_EMAIL ?? "gstalin110@gmail.com"
 ).toLowerCase();
 
 export function isOwnerEmail(email?: string | null): boolean {
