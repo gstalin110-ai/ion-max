@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isOwnerEmail } from "@/lib/constants";
 
 function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach(({ name, value }) => {
@@ -43,18 +44,32 @@ export async function proxy(request: NextRequest) {
     "/dashboard",
     "/profile",
     "/wallet",
-    "/messages",
+    "/mensajes",
+    "/comunidad",
     "/settings",
     "/publish",
-    "/owner",
+    "/marketplace",
   ];
   const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
 
-  const isAdminPath =
-    pathname.startsWith("/admin") && !pathname.startsWith("/admin/login");
+  const isAdminPath = pathname.startsWith("/admin");
+  const isLegacyOwnerPath = pathname.startsWith("/owner");
+  const isLegacyMessagesPath = pathname.startsWith("/messages");
 
   const authPaths = ["/login", "/register"];
   const isAuthPath = authPaths.some((path) => pathname.startsWith(path));
+
+  if (isLegacyOwnerPath) {
+    const redirect = NextResponse.redirect(new URL("/admin", request.url));
+    copyCookies(response, redirect);
+    return redirect;
+  }
+
+  if (isLegacyMessagesPath) {
+    const redirect = NextResponse.redirect(new URL("/mensajes", request.url));
+    copyCookies(response, redirect);
+    return redirect;
+  }
 
   if (!user && (isProtectedPath || isAdminPath)) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
@@ -63,24 +78,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthPath) {
-    const redirect = NextResponse.redirect(new URL("/dashboard", request.url));
+    const redirect = NextResponse.redirect(new URL("/comunidad", request.url));
     copyCookies(response, redirect);
     return redirect;
   }
 
-  if (user && isAdminPath) {
-    const { data: userRole } = await supabase
-      .from("user_roles")
-      .select("roles ( name )")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const roleName = (userRole?.roles as { name?: string } | null)?.name;
-    if (!roleName || roleName !== "admin") {
-      const redirect = NextResponse.redirect(new URL("/dashboard", request.url));
-      copyCookies(response, redirect);
-      return redirect;
-    }
+  if (user && isAdminPath && !isOwnerEmail(user.email)) {
+    const redirect = NextResponse.redirect(new URL("/comunidad", request.url));
+    copyCookies(response, redirect);
+    return redirect;
   }
 
   return response;

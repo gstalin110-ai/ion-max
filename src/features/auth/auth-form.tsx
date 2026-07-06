@@ -83,14 +83,14 @@ export function AuthForm({ mode }: AuthFormProps) {
         const registerValues = values as RegisterValues;
         await signUp(registerValues.email, registerValues.password, registerValues.fullName);
         router.refresh();
-        router.push("/dashboard");
+        router.push("/comunidad");
         return;
       }
 
       const loginValues = values as LoginValues;
       await signIn(loginValues.email, loginValues.password);
       router.refresh();
-      router.push("/dashboard");
+      router.push("/comunidad");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error");
     }
