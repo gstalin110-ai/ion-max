@@ -34,7 +34,7 @@ export async function refreshSupabaseSession(request: NextRequest) {
 export function redirectWithSessionCookies(url: URL, sessionResponse: NextResponse) {
   const redirect = NextResponse.redirect(url);
   sessionResponse.cookies.getAll().forEach((cookie) => {
-    redirect.cookies.set(cookie.name, cookie.value);
+    redirect.cookies.set(cookie);
   });
   return redirect;
 }
