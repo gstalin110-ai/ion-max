@@ -1,11 +1,12 @@
 # ⚡ IÓN MAX - Premium Platform
 
-**Plataforma premium de lujo para SHOP, ACADEMY y SERVICES.**
+**Plataforma premium de ecosistema profesional con SHOP, ACADEMY, SERVICES y RED SOCIAL.**
 
 - 🌐 [Sitio en vivo](https://tu-dominio.com)
 - 🔐 Autenticación con Supabase
 - 📱 Diseño responsive
 - ⚙️ Panel admin CRUD
+- 👥 Red social profesional (Comunidad y Mensajes)
 
 ## 🚀 Stack
 
