@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Package, Search, Settings, ShoppingBag, Sparkles, UserCircle2 } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Package, Search, Settings, ShoppingBag, Sparkles, UserCircle2, Users } from "lucide-react";
 import { useAppStore } from "@/src/store/app-store";
 import { useAuth } from "@/src/contexts/auth-context";
 
@@ -12,6 +12,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const baseNav = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
+    { label: "Comunidad", href: "/comunidad", icon: Users },
+    { label: "Mensajes", href: "/mensajes", icon: MessageSquare },
     { label: "Publicar", href: "/publish", icon: Sparkles },
     { label: "Productos", href: "/products", icon: Package },
     { label: "Servicios", href: "/services", icon: Sparkles },
@@ -19,7 +21,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { label: "Empleos", href: "/jobs", icon: BriefcaseBusiness },
     { label: "Empresas", href: "/companies", icon: Building2 },
     { label: "Favoritos", href: "/favorites", icon: Heart },
-    { label: "Mensajes", href: "/messages", icon: MessageSquare },
     { label: "Billetera", href: "/wallet", icon: CreditCard },
     { label: "Perfil", href: "/profile", icon: UserCircle2 },
     { label: "Configuración", href: "/settings", icon: Settings },

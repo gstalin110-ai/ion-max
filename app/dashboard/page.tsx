@@ -1,10 +1,10 @@
 import { DashboardPage } from "@/src/features/dashboard/dashboard-page";
-import { ProtectedRoute } from "@/src/components/protected-route";
+import { AppShell } from "@/src/components/layout/app-shell";
 
 export default function DashboardRoute() {
   return (
-    <ProtectedRoute>
+    <AppShell>
       <DashboardPage />
-    </ProtectedRoute>
+    </AppShell>
   );
 }

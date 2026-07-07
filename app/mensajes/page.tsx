@@ -1,10 +1,10 @@
 import { SocialMessagesPage } from "@/src/features/messages/social-messages-page";
-import { ProtectedRoute } from "@/src/components/protected-route";
+import { AppShell } from "@/src/components/layout/app-shell";
 
 export default function MensajesRoute() {
   return (
-    <ProtectedRoute>
+    <AppShell>
       <SocialMessagesPage />
-    </ProtectedRoute>
+    </AppShell>
   );
 }

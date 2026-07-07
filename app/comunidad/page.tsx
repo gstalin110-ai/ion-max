@@ -1,10 +1,10 @@
 import { ComunidadPage } from "@/src/features/comunidad/comunidad-page";
-import { ProtectedRoute } from "@/src/components/protected-route";
+import { AppShell } from "@/src/components/layout/app-shell";
 
 export default function ComunidadRoute() {
   return (
-    <ProtectedRoute>
+    <AppShell>
       <ComunidadPage />
-    </ProtectedRoute>
+    </AppShell>
   );
 }

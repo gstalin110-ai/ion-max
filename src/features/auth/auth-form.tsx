@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/src/contexts/auth-context";
-import { loginAction, signupAction } from "@/src/lib/auth/actions";
 
 const loginSchema = z.object({
   email: z.string().email("Ingresa un correo válido"),
@@ -36,7 +35,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ mode }: AuthFormProps) {
-  const { resetPassword } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
@@ -85,37 +84,20 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       if (mode === "register") {
         const registerValues = values as RegisterValues;
-        const result = await signupAction(
+        await signUp(
           registerValues.email,
           registerValues.password,
           registerValues.fullName
         );
 
-        if (result?.error) {
-          setError(result.error);
-          setRedirecting(false);
-          return;
-        }
-
-        if (result?.needsEmailConfirmation) {
-          setStatus(result.message ?? "Cuenta creada. Revisa tu correo.");
-          setRedirecting(false);
-          return;
-        }
-
+        setStatus("Cuenta creada exitosamente. Revisa tu correo para confirmar.");
+        setRedirecting(false);
         return;
       }
 
       const loginValues = values as LoginValues;
-      const next = new URLSearchParams(window.location.search).get("next");
-      const result = await loginAction(loginValues.email, loginValues.password, next);
-
-      if (result?.error) {
-        setError(result.error);
-        setRedirecting(false);
-      }
+      await signIn(loginValues.email, loginValues.password);
     } catch (err) {
-      if (isNextRedirectError(err)) return;
       setError(err instanceof Error ? err.message : "Ocurrió un error");
       setRedirecting(false);
     }
@@ -217,14 +199,5 @@ export function AuthForm({ mode }: AuthFormProps) {
         </div>
       </form>
     </div>
-  );
-}
-
-function isNextRedirectError(error: unknown) {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    String((error as { digest?: string }).digest).startsWith("NEXT_REDIRECT")
   );
 }
