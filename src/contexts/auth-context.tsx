@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
@@ -18,14 +19,18 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     let active = true;
 
     async function initialize() {
-      const { data } = await supabase.auth.getUser();
+      // FIX: Usar getSession() en el cliente también, consistente con el middleware.
+      // getUser() fuerza una llamada de red; getSession() lee desde la cookie local
+      // y es suficiente para la inicialización del contexto en el browser.
+      const { data } = await supabase.auth.getSession();
       if (active) {
-        setUser(data.user ?? null);
+        setUser(data.session?.user ?? null);
         setLoading(false);
       }
     }
@@ -53,6 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!data.session) {
           throw new Error("No se pudo establecer la sesión. Intenta de nuevo.");
         }
+        // FIX: Redirigir explícitamente después del login exitoso.
+        // Antes, signIn() resolvía sin navegar → el formulario se quedaba con
+        // redirecting=true esperando una navegación que nunca ocurría → loop infinito.
+        // Usamos router.push() para que Next.js ejecute el middleware (proxy.ts),
+        // el cual detecta user autenticado en /login y redirige a /comunidad.
+        router.push("/comunidad");
       },
       signUp: async (email, password, fullName) => {
         const { error } = await supabase.auth.signUp({
@@ -74,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
       },
     }),
-    [loading, user]
+    [loading, router, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
