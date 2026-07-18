@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    outputFileTracing: false,
-  },
+  /* opciones de configuración aquí */
 };
 
 export default nextConfig;
