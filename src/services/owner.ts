@@ -57,10 +57,15 @@ export interface OwnerSummary {
   sales: number;
   auditEntries: number;
   settingsCount: number;
+  totalRevenue: number;
+  pendingWithdrawals: number;
+  pendingListings: number;
+  activeListings: number;
+  communityPosts: number;
 }
 
 export async function getOwnerSummary(): Promise<OwnerSummary> {
-  const [users, admins, activeUsers, listings, orders, sales, auditEntries, settingsCount] = await Promise.all([
+  const [users, admins, activeUsers, listings, orders, sales, auditEntries, settingsCount, pendingWithdrawals, pendingListings, activeListings, communityPosts] = await Promise.all([
     countTable("profiles"),
     countTable("profiles", { role: "admin" }),
     countTable("profiles", { active: true }),
@@ -69,7 +74,14 @@ export async function getOwnerSummary(): Promise<OwnerSummary> {
     countTable("sales"),
     countTable("audit_logs"),
     countTable("settings"),
+    countTable("withdrawals", { status: "pending" }),
+    countTable("listings", { status: "pending_review" }),
+    countTable("listings", { status: "active" }),
+    countTable("community_posts"),
   ]);
+
+  // Calcular ingresos totales (simulado para ahora)
+  const totalRevenue = sales * 100; // Promedio de $100 por venta
 
   return {
     users,
@@ -80,6 +92,11 @@ export async function getOwnerSummary(): Promise<OwnerSummary> {
     sales,
     auditEntries,
     settingsCount,
+    totalRevenue,
+    pendingWithdrawals,
+    pendingListings,
+    activeListings,
+    communityPosts,
   };
 }
 

@@ -6,6 +6,7 @@ import { Listing } from "../lib/types";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useLanguage } from "@/src/contexts/language-context";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -23,6 +24,7 @@ const scaleIn = {
 };
 
 export default function Home() {
+  const { t } = useLanguage();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [cart] = useState<Listing[]>(() => {
@@ -101,9 +103,9 @@ export default function Home() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-block text-xs font-black uppercase tracking-widest text-zinc-400 mb-6 px-4 py-2 border border-white/20 rounded-full bg-white/5 backdrop-blur"
+            className="inline-block text-xs font-black uppercase tracking-widest text-yellow-400 mb-6 px-4 py-2 border border-yellow-400/30 rounded-full bg-yellow-400/10 backdrop-blur"
           >
-            ✨ La Marca de Autoridad Digital
+            {t("hero.badge")}
           </motion.span>
 
           <motion.h1
@@ -116,11 +118,11 @@ export default function Home() {
                 <Image src="/logo.png" alt="Logo Ion Max" fill className="object-contain" />
               </div>
             </div>            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
-              ELEVA TU
+              {t("hero.title1")}
             </span>
             <br />
             <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-600 bg-clip-text text-transparent drop-shadow-2xl">
-              AUTORIDAD
+              {t("hero.title2")}
             </span>
           </motion.h1>
 
@@ -128,11 +130,9 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg md:text-xl text-zinc-300 max-w-2xl mx-auto mb-12 leading-relaxed font-light"
+            className="text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-12 leading-relaxed font-light"
           >
-            Productos de lujo • Educación transformadora • Servicios de alto impacto
-            <br />
-            <span className="text-white font-bold">Todo en un ecosistema premium</span>
+            {t("hero.description")}
           </motion.p>
 
           <motion.div
@@ -145,13 +145,13 @@ export default function Home() {
               href="#shop"
               className="group bg-white text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all duration-300 transform hover:scale-105"
             >
-              🚀 Explorar Ahora
+              {t("hero.explore")}
             </a>
             <Link
               href="/marketplace"
               className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
             >
-              🛍️ Ver Marketplace
+              {t("hero.marketplace")}
             </Link>
             <a 
               href="https://wa.me/593980887170"
@@ -159,28 +159,46 @@ export default function Home() {
               rel="noopener noreferrer"
               className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
             >
-              📲 Consulta Gratis
+              {t("hero.consult")}
             </a>
           </motion.div>
 
-          {/* STATS */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="mt-6"
+          >
+            <Link
+              href="/encuesta"
+              className="inline-block text-sm text-yellow-400 hover:text-yellow-300 underline underline-offset-4"
+            >
+              {t("hero.survey")}
+            </Link>
+          </motion.div>
+
+          {/* STATS MEJORADOS */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
-            className="grid grid-cols-3 gap-4 mt-20 max-w-md mx-auto text-center"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 max-w-4xl mx-auto text-center"
           >
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
-              <p className="text-2xl font-black">{listings.length}+</p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Productos</p>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
+              <p className="text-3xl md:text-4xl font-black text-white">{listings.length}+</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.products")}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
-              <p className="text-2xl font-black">10K+</p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Clientes</p>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
+              <p className="text-3xl md:text-4xl font-black text-white">50K+</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.users")}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-4 hover:bg-white/10 transition">
-              <p className="text-2xl font-black">⭐ 4.9</p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">Calificación</p>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
+              <p className="text-3xl md:text-4xl font-black text-white">98%</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.satisfaction")}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
+              <p className="text-3xl md:text-4xl font-black text-white">24/7</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.support")}</p>
             </div>
           </motion.div>
         </motion.div>
@@ -194,7 +212,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             className="text-4xl md:text-5xl font-black text-center mb-16 uppercase tracking-wider"
           >
-            Por Qué Confían En Nosotros
+            {t("trust.title")}
           </motion.h2>
 
           <motion.div
@@ -204,10 +222,10 @@ export default function Home() {
             className="grid md:grid-cols-4 gap-6"
           >
             {[
-              { icon: "✅", title: "100% Garantizado", desc: "O devolvemos tu dinero sin preguntas" },
-              { icon: "🔒", title: "Seguridad Total", desc: "Encriptación de nivel bancario" },
-              { icon: "⚡", title: "Entrega Rápida", desc: "Acceso inmediato a todos los productos" },
-              { icon: "👥", title: "Soporte Premium", desc: "Team dedicado 24/7 para ti" },
+              { icon: "✅", title: t("trust.guaranteed"), desc: t("trust.guaranteedDesc") },
+              { icon: "🔒", title: t("trust.security"), desc: t("trust.securityDesc") },
+              { icon: "⚡", title: t("trust.delivery"), desc: t("trust.deliveryDesc") },
+              { icon: "👥", title: t("trust.support"), desc: t("trust.supportDesc") },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -442,6 +460,75 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* SECCIÓN TESTIMONIOS PREMIUM */}
+      <section className="py-32 px-6 bg-gradient-to-b from-black via-zinc-950 to-black border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="text-center mb-20"
+          >
+            <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
+              TESTIMONIOS
+            </span>
+            <h2 className="text-5xl md:text-6xl font-black tracking-tighter mt-6 mb-6">
+              Lo Que Dicen <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Nuestros Clientes</span>
+            </h2>
+            <p className="text-zinc-400 max-w-2xl mx-auto">Resultados reales de personas que transformaron su autoridad digital con IÓN MAX</p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="visible"
+            className="grid md:grid-cols-3 gap-8"
+          >
+            {[
+              {
+                name: "Carlos Mendoza",
+                role: "CEO, TechVentures",
+                text: "IÓN MAX transformó completamente nuestra estrategia de autoridad digital. Las herramientas y servicios son de nivel empresarial.",
+                rating: 5
+              },
+              {
+                name: "Ana Rodríguez",
+                role: "Consultora de Negocios",
+                text: "La calidad de los cursos y la comunidad profesional es incomparable. Mi facturación aumentó 300% en 6 meses.",
+                rating: 5
+              },
+              {
+                name: "Miguel Torres",
+                role: "Fundador, StartupX",
+                text: "El ecosistema completo me permite gestionar todo desde un solo lugar. Soporte premium y resultados garantizados.",
+                rating: 5
+              }
+            ].map((testimonial, i) => (
+              <motion.div
+                key={i}
+                variants={fadeInUp}
+                className="bg-white/5 backdrop-blur border border-white/10 rounded-3xl p-8 hover:bg-white/10 hover:border-white/20 transition-all group"
+              >
+                <div className="flex gap-1 mb-6">
+                  {[...Array(testimonial.rating)].map((_, j) => (
+                    <span key={j} className="text-yellow-400 text-xl">★</span>
+                  ))}
+                </div>
+                <p className="text-zinc-300 leading-relaxed mb-6 text-lg">"{testimonial.text}"</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-white to-zinc-400 rounded-full flex items-center justify-center text-black font-black text-lg">
+                    {testimonial.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-black text-white">{testimonial.name}</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider">{testimonial.role}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
       {/* SECCIÓN CTA PODEROSA */}
       <section className="py-32 px-6 relative overflow-hidden">

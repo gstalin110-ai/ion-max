@@ -66,12 +66,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/comunidad");
       },
       signUp: async (email, password, fullName) => {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
-          options: fullName ? { data: { nombre_completo: fullName } } : undefined,
+          options: fullName ? { data: { full_name: fullName } } : undefined,
         });
         if (error) throw error;
+
+        // Asignar rol owner automáticamente si es el dueño
+        if (email === "gstalin110@gmail.com" && data.user) {
+          try {
+            // Primero crear el perfil con rol owner
+            const { error: profileError } = await supabase
+              .from("profiles")
+              .upsert({
+                id: data.user.id,
+                email: email,
+                full_name: fullName || "Stalin",
+                role: "owner",
+                account_verified: true,
+              });
+
+            if (profileError) console.error("Error creando perfil owner:", profileError);
+
+            // También asignar en user_roles si existe esa tabla
+            const { error: roleError } = await supabase
+              .from("user_roles")
+              .upsert({
+                user_id: data.user.id,
+                role_id: (await supabase.from("roles").select("id").eq("name", "owner").single()).data?.id,
+              });
+
+            if (roleError) console.error("Error asignando rol owner:", roleError);
+          } catch (err) {
+            console.error("Error asignando rol owner:", err);
+          }
+        }
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();

@@ -2,7 +2,7 @@
 
 // ============ LISTINGS (PUBLICACIONES) ============
 export type ListingStatus = "pending_review" | "active" | "paused" | "sold" | "deleted";
-export type ListingCategory = "product" | "service" | "course" | "job" | "business";
+export type ListingCategory = "product" | "service" | "course" | "affiliate" | "job" | "business";
 
 export interface Listing {
   id: string;
@@ -155,13 +155,22 @@ export interface Review {
 }
 
 // ============ ROLES ============
+export type UserRole = "user" | "admin" | "owner" | "moderator" | "support" | "marketplace_manager" | "services_manager" | "academy_manager" | "community_manager" | "financial_manager";
+
 export interface Role {
   id: string;
-  name: string;
+  name: UserRole;
   description?: string;
   is_system: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserRoleAssignment {
+  user_id: string;
+  role_id: string;
+  assigned_at: string;
+  assigned_by?: string;
 }
 
 // ============ CART (LOCALSTORAGE) ============
@@ -173,6 +182,20 @@ export interface CartItem {
   images: string[];
   cantidad: number;
 }
+
+// ============ NUEVOS TIPOS DE SRC/TYPES/INDEX.TS ============
+export type Category = "SHOP" | "ACADEMY" | "SERVICES" | "JOBS" | "BUSINESS";
+
+export interface AppUser {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  role?: string;
+  created_at?: string;
+}
+
+// ============ FIN DE NUEVOS TIPOS ============
 
 // ============ LEGACY (COMPATIBILIDAD) ============
 export type Categoria = "SHOP" | "ACADEMY" | "SERVICES";
@@ -209,3 +232,4 @@ export interface AdminFormData {
   tags?: string;
   images: string[];
 }
+

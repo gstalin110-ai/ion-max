@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/contexts/auth-context";
 import { isOwnerEmail } from "@/lib/constants";
+import { LanguageSelector } from "@/src/components/language-selector";
 
 export function GlobalNav() {
   const { user, signOut } = useAuth();
@@ -22,6 +23,7 @@ export function GlobalNav() {
         </Link>
 
         <nav className="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
+          <LanguageSelector />
           <Link href="/" className="transition hover:text-white">
             Inicio
           </Link>

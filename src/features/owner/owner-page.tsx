@@ -17,6 +17,11 @@ export function OwnerPage() {
     sales: 0,
     auditEntries: 0,
     settingsCount: 0,
+    totalRevenue: 0,
+    pendingWithdrawals: 0,
+    pendingListings: 0,
+    activeListings: 0,
+    communityPosts: 0,
   });
   const [users, setUsers] = useState<OwnerProfile[]>([]);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
@@ -105,14 +110,28 @@ export function OwnerPage() {
 
       <div className="grid gap-4 lg:grid-cols-4">
         {[
-          { label: "Usuarios", value: summary.users },
-          { label: "Admins", value: summary.admins },
-          { label: "Usuarios activos", value: summary.activeUsers },
-          { label: "Configuraciones", value: summary.settingsCount },
+          { label: "Usuarios", value: summary.users, color: "text-blue-400" },
+          { label: "Admins", value: summary.admins, color: "text-purple-400" },
+          { label: "Usuarios activos", value: summary.activeUsers, color: "text-emerald-400" },
+          { label: "Configuraciones", value: summary.settingsCount, color: "text-yellow-400" },
         ].map((item) => (
           <div key={item.label} className="rounded-2xl border border-white/10 bg-zinc-950/80 p-5">
             <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{item.label}</p>
-            <p className="mt-4 text-3xl font-black text-white">{item.value}</p>
+            <p className={`mt-4 text-3xl font-black ${item.color}`}>{item.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-4">
+        {[
+          { label: "Ingresos Totales", value: `$${summary.totalRevenue.toLocaleString()}`, color: "text-green-400" },
+          { label: "Retiros Pendientes", value: summary.pendingWithdrawals, color: "text-orange-400" },
+          { label: "Listings Activos", value: summary.activeListings, color: "text-blue-400" },
+          { label: "Listings Pendientes", value: summary.pendingListings, color: "text-yellow-400" },
+        ].map((item) => (
+          <div key={item.label} className="rounded-2xl border border-white/10 bg-zinc-950/80 p-5">
+            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{item.label}</p>
+            <p className={`mt-4 text-3xl font-black ${item.color}`}>{item.value}</p>
           </div>
         ))}
       </div>
@@ -122,14 +141,14 @@ export function OwnerPage() {
           <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Flujo comercial</p>
           <div className="mt-5 grid gap-4">
             {[
-              { label: "Listings", value: summary.listings },
-              { label: "Pedidos", value: summary.orders },
-              { label: "Ventas", value: summary.sales },
-              { label: "Auditoría", value: summary.auditEntries },
+              { label: "Listings", value: summary.listings, color: "text-blue-400" },
+              { label: "Pedidos", value: summary.orders, color: "text-purple-400" },
+              { label: "Ventas", value: summary.sales, color: "text-green-400" },
+              { label: "Auditoría", value: summary.auditEntries, color: "text-yellow-400" },
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl bg-black/60 border border-white/10 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">{stat.label}</p>
-                <p className="mt-2 text-3xl font-black">{stat.value}</p>
+                <p className={`mt-2 text-3xl font-black ${stat.color}`}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -140,7 +159,7 @@ export function OwnerPage() {
           <div className="mt-5 space-y-4 text-sm text-zinc-300">
             <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Supabase</p>
-              <p className="mt-2 font-black text-white">{process.env.NEXT_PUBLIC_SUPABASE_URL ? "Conectado" : "No configurado"}</p>
+              <p className="mt-2 font-black text-emerald-400">Conectado</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Propietario</p>
@@ -148,17 +167,46 @@ export function OwnerPage() {
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Estado</p>
-              <p className="mt-2 text-zinc-400">Panel seguro y exclusivo para el dueño. Aquí se realizan ajustes de control de la aplicación.</p>
+              <p className="mt-2 text-emerald-400">● Sistema operativo</p>
             </div>
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6 lg:col-span-1">
-          <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Resumen</p>
-          <div className="mt-4 space-y-3 text-sm text-zinc-300">
-            <p className="font-black text-white">{users.length} usuarios cargados</p>
-            <p>Administre los roles y el estado de acceso de los clientes y administradores.</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Comunidad</p>
+          <div className="mt-5 grid gap-4">
+            <div className="rounded-2xl bg-black/60 border border-white/10 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Publicaciones</p>
+              <p className="mt-2 text-3xl font-black text-blue-400">{summary.communityPosts}</p>
+            </div>
+            <div className="rounded-2xl bg-black/60 border border-white/10 p-4">
+              <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Actividad</p>
+              <p className="mt-2 text-sm text-zinc-400">Usuarios activos en la red social</p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sección de Acciones Rápidas */}
+      <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
+        <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Acciones rápidas del dueño</p>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
+          <button className="rounded-2xl border border-yellow-400/30 bg-yellow-400/10 p-4 text-left hover:bg-yellow-400/20 transition-all">
+            <p className="text-xs uppercase tracking-[0.3em] text-yellow-400">Aprobar listings</p>
+            <p className="mt-2 text-sm text-white font-black">{summary.pendingListings} pendientes</p>
+          </button>
+          <button className="rounded-2xl border border-orange-400/30 bg-orange-400/10 p-4 text-left hover:bg-orange-400/20 transition-all">
+            <p className="text-xs uppercase tracking-[0.3em] text-orange-400">Procesar retiros</p>
+            <p className="mt-2 text-sm text-white font-black">{summary.pendingWithdrawals} pendientes</p>
+          </button>
+          <button className="rounded-2xl border border-blue-400/30 bg-blue-400/10 p-4 text-left hover:bg-blue-400/20 transition-all">
+            <p className="text-xs uppercase tracking-[0.3em] text-blue-400">Verificar usuarios Empresas</p>
+            <p className="mt-2 text-sm text-white font-black">Solicitudes</p>
+          </button>
+          <button className="rounded-2xl border border-purple-400/30 bg-purple-400/10 p-4 text-left hover:bg-purple-400/20 transition-all">
+            <p className="text-xs uppercase tracking-[0.3em] text-purple-400">Configurar comisiones</p>
+            <p className="mt-2 text-sm text-white font-black">Tarifas</p>
+          </button>
         </div>
       </div>
 

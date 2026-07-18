@@ -1,7 +1,7 @@
 import { withSupabase } from "@supabase/server";
 
 export const GET = withSupabase({ auth: "publishable" }, async (_req, ctx) => {
-  const { data, error } = await ctx.supabase.from("items").select("*").order("created_at", { ascending: false }).limit(10);
+  const { data, error } = await ctx.supabase.from("listings").select("*").order("created_at", { ascending: false }).limit(10);
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -10,7 +10,7 @@ export const GET = withSupabase({ auth: "publishable" }, async (_req, ctx) => {
     });
   }
 
-  return new Response(JSON.stringify({ items: data ?? [] }), {
+  return new Response(JSON.stringify({ listings: data ?? [] }), {
     headers: { "content-type": "application/json" },
   });
 });

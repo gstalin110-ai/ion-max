@@ -11,6 +11,41 @@
 -- 3. ✅ Habilitado RLS en listings, orders, payments, wallets
 -- 4. ✅ Creadas políticas de seguridad básicas
 -- 5. ✅ Asegurados roles iniciales (admin, user, business)
+-- 6. ✅ Corregido trigger para usar full_name en lugar de nombre_completo
+
+-- ============================================
+-- CORRECCIÓN DEL TRIGGER DE PERFIL
+-- ============================================
+-- El trigger anterior usaba 'nombre_completo' pero el formulario envía 'full_name'
+-- Este script actualiza el trigger para usar el campo correcto
+
+-- Eliminar trigger antiguo si existe
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Crear trigger actualizado con el campo correcto
+CREATE OR REPLACE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_new_user();
+
+-- Asegurar que la función handle_new_user use full_name
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email, full_name, role, account_verified)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'nombre_completo', 'Usuario'),
+        'user',
+        false
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = NEW.email,
+        full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'nombre_completo', profiles.full_name);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================
 -- PASO FINAL: Asignar rol admin al usuario dueño

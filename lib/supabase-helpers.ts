@@ -119,6 +119,18 @@ export async function getWallet(userId: string) {
 // ========== FUNCIONES DE ROLES ==========
 
 export async function getUserRole(userId: string): Promise<string> {
+  // Primero intentar obtener el rol desde profiles.role (sistema unificado)
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!profileError && profile?.role) {
+    return profile.role;
+  }
+
+  // Si no existe en profiles, intentar desde user_roles (sistema relacional)
   const { data, error } = await supabase
     .from("user_roles")
     .select(`
@@ -135,7 +147,12 @@ export async function getUserRole(userId: string): Promise<string> {
 
 export async function isAdmin(userId: string): Promise<boolean> {
   const role = await getUserRole(userId);
-  return role === "admin";
+  return role === "admin" || role === "owner";
+}
+
+export async function isOwner(userId: string): Promise<boolean> {
+  const role = await getUserRole(userId);
+  return role === "owner";
 }
 
 // ========== FUNCIONES DE AUTENTICACIÓN ==========
