@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  outputFileTracing: false,
+  experimental: {
+    outputFileTracing: false,
+  },
 };
 
 export default nextConfig;
