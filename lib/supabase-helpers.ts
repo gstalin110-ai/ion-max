@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Listing, ListingFormData, Profile, Wallet, Order, Role } from "./types";
+import { Listing, ListingFormData, Profile, Wallet, Order, Role, OrderItem, Payment, ShippingAddress, CheckoutFormData, PaymentMethod, PaymentStatus, OrderStatus } from "./types";
 
 // ========== FUNCIONES DE LISTINGS ==========
 
@@ -28,6 +28,22 @@ export async function getListingsByCategory(categoryId: string) {
 
   if (error) throw new Error(error.message);
   return data as Listing[];
+}
+
+export async function getListing(id: string) {
+  const { data, error } = await supabase
+    .from("listings")
+    .select(`
+      *,
+      categories!inner(name),
+      profiles!inner(username, avatar_url, full_name)
+    `)
+    .eq("id", id)
+    .eq("status", "active")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Listing;
 }
 
 export async function createListing(formData: ListingFormData) {
@@ -179,4 +195,152 @@ export async function getCurrentUser() {
 
   if (error) throw new Error(error.message);
   return user;
+}
+
+// ========== FUNCIONES DE ÓRDENES Y PAGOS ==========
+
+export async function createOrder(
+  buyerId: string,
+  sellerId: string,
+  items: OrderItem[],
+  shippingAddress: ShippingAddress,
+  totalAmount: number
+): Promise<Order> {
+  const { data, error } = await supabase
+    .from("orders")
+    .insert({
+      buyer_id: buyerId,
+      seller_id: sellerId,
+      status: "pending",
+      total_amount: totalAmount,
+      shipping_address: JSON.stringify(shippingAddress),
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  // Crear items de la orden
+  const orderItems = items.map(item => ({
+    order_id: data.id,
+    listing_id: item.listing_id,
+    listing_title: item.listing_title,
+    listing_image: item.listing_image,
+    quantity: item.quantity,
+    price: item.price,
+    subtotal: item.subtotal,
+  }));
+
+  await supabase.from("order_items").insert(orderItems);
+
+  return data as Order;
+}
+
+export async function createPayment(
+  orderId: string,
+  paymentMethod: PaymentMethod,
+  amount: number
+): Promise<Payment> {
+  const { data, error } = await supabase
+    .from("payments")
+    .insert({
+      order_id: orderId,
+      payment_method: paymentMethod,
+      payment_status: "pending",
+      amount: amount,
+      currency: "USD",
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Payment;
+}
+
+export async function updatePaymentStatus(
+  paymentId: string,
+  status: PaymentStatus,
+  transactionId?: string
+): Promise<Payment> {
+  const { data, error } = await supabase
+    .from("payments")
+    .update({
+      payment_status: status,
+      transaction_id: transactionId,
+    })
+    .eq("id", paymentId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Payment;
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus
+): Promise<Order> {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ status })
+    .eq("id", orderId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Order;
+}
+
+export async function getUserOrders(userId: string): Promise<Order[]> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      *,
+      order_items (*),
+      payments (*)
+    `)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data as Order[];
+}
+
+export async function getOrder(orderId: string): Promise<Order> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      *,
+      order_items (*),
+      payments (*)
+    `)
+    .eq("id", orderId)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as Order;
+}
+
+export async function processRefund(orderId: string, reason: string): Promise<void> {
+  // Actualizar estado del pago
+  const { data: order } = await supabase
+    .from("orders")
+    .select("payments")
+    .eq("id", orderId)
+    .single();
+
+  if (order?.payments) {
+    const payment = Array.isArray(order.payments) ? order.payments[0] : order.payments;
+    await updatePaymentStatus(payment.id, "refunded");
+  }
+
+  // Actualizar estado de la orden
+  await updateOrderStatus(orderId, "refunded");
+
+  // Crear registro de reembolso
+  await supabase.from("refunds").insert({
+    order_id: orderId,
+    reason,
+    status: "processed",
+  });
 }

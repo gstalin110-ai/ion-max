@@ -196,6 +196,9 @@ export function AuthForm({ mode }: AuthFormProps) {
               Volver a iniciar sesión
             </a>
           )}
+          <a href="/invite" className="hover:text-white">
+            ← Volver al acceso
+          </a>
         </div>
       </form>
     </div>

@@ -2,7 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/src/contexts/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  ShoppingCart,
+  Star,
+  TrendingUp,
+  Users,
+  Sparkles,
+  Send,
+  Plus,
+  Filter,
+} from "lucide-react";
 import {
   createCommunityPost,
   ensureProfile,
@@ -11,6 +27,11 @@ import {
   type CommunityMember,
   type CommunityPost,
 } from "@/src/services/social";
+import { getListings } from "@/lib/supabase-helpers";
+import { Listing } from "@/lib/types";
+import { StoriesComponent } from "./stories-component";
+import { NotificationsComponent } from "./notifications-component";
+import { RecommendationsComponent } from "./recommendations-component";
 
 export function ComunidadPage() {
   const { user } = useAuth();
@@ -20,6 +41,59 @@ export function ComunidadPage() {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "products" | "posts">("all");
+  
+  // Sistema de likes y comentarios
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [likedByUser, setLikedByUser] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Record<string, string[]>>({});
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
+  
+  // Sistema de seguimiento
+  const [following, setFollowing] = useState<Set<string>>(new Set());
+
+  const toggleLike = (postId: string) => {
+    setLikedByUser(prev => {
+      const isLiked = !prev[postId];
+      const updated = { ...prev, [postId]: isLiked };
+      setLikes(prev => ({
+        ...prev,
+        [postId]: (prev[postId] || 0) + (isLiked ? 1 : -1),
+      }));
+      return updated;
+    });
+  };
+
+  const toggleComments = (postId: string) => {
+    setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const addComment = (postId: string) => {
+    if (!newComment[postId]?.trim()) return;
+    setComments(prev => ({
+      ...prev,
+      [postId]: [...(prev[postId] || []), newComment[postId]],
+    }));
+    setNewComment(prev => ({ ...prev, [postId]: "" }));
+  };
+
+  const toggleFollow = (memberId: string) => {
+    setFollowing(prev => {
+      const updated = new Set(prev);
+      if (updated.has(memberId)) {
+        updated.delete(memberId);
+      } else {
+        updated.add(memberId);
+      }
+      return updated;
+    });
+  };
+
+  const { data: listings = [] } = useQuery({
+    queryKey: ["listings"],
+    queryFn: getListings,
+  });
 
   useEffect(() => {
     async function load() {
@@ -66,6 +140,29 @@ export function ComunidadPage() {
     );
   });
 
+  // Combinar posts y listings en el feed
+  const feedItems = [
+    ...posts.map((post) => ({
+      type: "post" as const,
+      data: post,
+      id: post.id,
+      created_at: post.created_at,
+    })),
+    ...listings.slice(0, 5).map((listing) => ({
+      type: "product" as const,
+      data: listing,
+      id: listing.id,
+      created_at: listing.created_at,
+    })),
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const filteredFeed = feedItems.filter((item) => {
+    if (filter === "all") return true;
+    if (filter === "products") return item.type === "product";
+    if (filter === "posts") return item.type === "post";
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -75,106 +172,373 @@ export function ComunidadPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8">
+    <div className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+      {/* HEADER */}
       <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-yellow-400">Red profesional</p>
-        <h1 className="mt-3 text-4xl font-black text-white">Comunidad IÓN MAX</h1>
-        <p className="mt-3 max-w-2xl text-sm text-zinc-400">
-          Conecta con otros profesionales, comparte actualizaciones y encuentra colaboradores dentro del ecosistema.
-        </p>
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-yellow-400">Red social de ventas</p>
+            <h1 className="mt-3 text-4xl font-black text-white">Comunidad IÓN MAX</h1>
+            <p className="mt-3 max-w-2xl text-sm text-zinc-400">
+              Conecta con vendedores, descubre productos exclusivos y comparte tus ofertas con la comunidad.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <NotificationsComponent />
+            <Link
+              href="/marketplace"
+              className="rounded-full bg-white px-6 py-3 text-sm font-black text-black hover:bg-zinc-200 transition"
+            >
+              <ShoppingCart className="mr-2 h-4 w-4 inline" />
+              Ir al Marketplace
+            </Link>
+            <Link
+              href="/publish"
+              className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-black text-white hover:bg-white/10 transition"
+            >
+              <Plus className="mr-2 h-4 w-4 inline" />
+              Publicar
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
+          {/* HISTORIAS (STORIES) */}
+          <StoriesComponent />
+
+          {/* FORMULARIO DE PUBLICACIÓN */}
           <form onSubmit={handlePost} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Comparte una actualización profesional..."
-              rows={3}
-              className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-yellow-400"
-            />
-            <button
-              type="submit"
-              disabled={posting || !newPost.trim()}
-              className="mt-3 rounded-2xl bg-yellow-400 px-6 py-2 text-sm font-black text-black disabled:opacity-50"
-            >
-              {posting ? "Publicando..." : "Publicar"}
-            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
+              <textarea
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                placeholder="Comparte una oferta, promoción o actualización..."
+                rows={2}
+                className="flex-1 resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-yellow-400"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
+                  <span className="text-sm">📷</span>
+                </button>
+                <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
+                  <Sparkles className="h-4 w-4" />
+                </button>
+              </div>
+              <button
+                type="submit"
+                disabled={posting || !newPost.trim()}
+                className="rounded-full bg-yellow-400 px-6 py-2 text-sm font-black text-black disabled:opacity-50"
+              >
+                {posting ? "Publicando..." : <><Send className="mr-2 h-4 w-4 inline" /> Publicar</>}
+              </button>
+            </div>
           </form>
 
+          {/* FILTROS */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilter("all")}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                filter === "all"
+                  ? "border-white bg-white text-black"
+                  : "border-white/10 bg-white/5 text-zinc-400"
+              }`}
+            >
+              Todo
+            </button>
+            <button
+              onClick={() => setFilter("products")}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                filter === "products"
+                  ? "border-white bg-white text-black"
+                  : "border-white/10 bg-white/5 text-zinc-400"
+              }`}
+            >
+              Productos
+            </button>
+            <button
+              onClick={() => setInterval(() => setFilter("posts"), 5000)}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                filter === "posts"
+                  ? "border-white bg-white text-black"
+                  : "border-white/10 bg-white/5 text-zinc-400"
+              }`}
+            >
+              Posts
+            </button>
+          </div>
+
+          {/* FEED */}
           <div className="space-y-4">
-            {posts.length === 0 ? (
+            {filteredFeed.length === 0 ? (
               <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-8 text-center text-zinc-500">
-                Sé el primero en publicar en la comunidad.
+                No hay contenido para mostrar.
               </div>
             ) : (
-              posts.map((post) => (
-                <article
-                  key={post.id}
-                  className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6"
+              filteredFeed.map((item) => (
+                <motion.article
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-3xl border border-white/10 bg-zinc-950/80 overflow-hidden"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400/20 text-sm font-black text-yellow-400">
-                      {(post.author?.full_name ?? "?")[0]?.toUpperCase()}
+                  {item.type === "product" ? (
+                    // PRODUCT CARD
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
+                        <div>
+                          <p className="font-bold text-white">
+                            {item.data.seller_name || "Vendedor Premium"}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            {item.data.seller_rating ? `⭐ ${item.data.seller_rating.toFixed(1)}` : "Vendedor verificado"} ·{" "}
+                            {new Date(item.data.created_at).toLocaleDateString("es-ES")}
+                          </p>
+                        </div>
+                        <span className="ml-auto rounded-full bg-yellow-400/10 px-3 py-1 text-xs font-black text-yellow-400">
+                          Nuevo producto
+                        </span>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-xl">
+                          <Image
+                            src={item.data.images?.[0] || "/placeholder.png"}
+                            alt={item.data.title}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white">{item.data.title}</h3>
+                          <p className="mt-1 text-sm text-zinc-400 line-clamp-2">{item.data.description}</p>
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className="text-2xl font-black text-yellow-400">${item.data.price}</span>
+                            <div className="flex gap-2">
+                              <Link
+                                href={`/listing/${item.data.id}`}
+                                className="rounded-full bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200 transition"
+                              >
+                                Ver más
+                              </Link>
+                              <button className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
+                                <Heart className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-white">
-                        {post.author?.full_name ?? "Profesional"}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {post.author?.profession ?? "Miembro IÓN MAX"} ·{" "}
-                        {new Date(post.created_at).toLocaleDateString("es-ES")}
-                      </p>
+                  ) : (
+                    // POST CARD
+                    <div className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400/20 text-sm font-black text-yellow-400">
+                          {(item.data.author?.full_name ?? "?")[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-white">
+                            {item.data.author?.full_name ?? "Profesional"}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            {item.data.author?.profession ?? "Miembro IÓN MAX"} ·{" "}
+                            {new Date(item.data.created_at).toLocaleDateString("es-ES")}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm leading-relaxed text-zinc-300">{item.data.content}</p>
+                      
+                      {/* Likes y Comentarios */}
+                      <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500 border-t border-white/10 pt-4">
+                        <button
+                          onClick={() => toggleLike(item.id)}
+                          className={`flex items-center gap-1 transition ${
+                            likedByUser[item.id] ? "text-red-500" : "hover:text-white"
+                          }`}
+                        >
+                          <Heart className={`h-4 w-4 ${likedByUser[item.id] ? "fill-red-500" : ""}`} />
+                          {likes[item.id] || 0}
+                        </button>
+                        <button
+                          onClick={() => toggleComments(item.id)}
+                          className="flex items-center gap-1 hover:text-white transition"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          {comments[item.id]?.length || 0}
+                        </button>
+                        <button className="flex items-center gap-1 hover:text-white transition">
+                          <Share2 className="h-4 w-4" />
+                          Compartir
+                        </button>
+                      </div>
+
+                      {/* Sección de Comentarios */}
+                      {showComments[item.id] && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          className="mt-4 space-y-3"
+                        >
+                          {/* Lista de Comentarios */}
+                          {(comments[item.id] || []).map((comment, idx) => (
+                            <div key={idx} className="rounded-xl bg-black/60 p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="h-6 w-6 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
+                                <span className="text-xs font-black text-white">Usuario</span>
+                              </div>
+                              <p className="text-xs text-zinc-400">{comment}</p>
+                            </div>
+                          ))}
+
+                          {/* Formulario de Comentario */}
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={newComment[item.id] || ""}
+                              onChange={(e) => setNewComment(prev => ({ ...prev, [item.id]: e.target.value }))}
+                              placeholder="Escribe un comentario..."
+                              className="flex-1 rounded-full border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500"
+                            />
+                            <button
+                              onClick={() => addComment(item.id)}
+                              className="rounded-full bg-yellow-400 px-4 py-2 text-sm font-black text-black hover:bg-yellow-300 transition"
+                            >
+                              <Send className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
-                  </div>
-                  <p className="mt-4 text-sm leading-relaxed text-zinc-300">{post.content}</p>
-                  {post.author && post.author.id !== user?.id && (
-                    <Link
-                      href={`/mensajes?con=${post.author.id}`}
-                      className="mt-4 inline-block text-xs font-bold text-yellow-400 hover:text-yellow-300"
-                    >
-                      Enviar mensaje →
-                    </Link>
                   )}
-                </article>
+                </motion.article>
               ))
             )}
           </div>
         </div>
 
         <aside className="space-y-4">
+          {/* ESTADÍSTICAS */}
           <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-            <h2 className="text-lg font-black text-white">Profesionales</h2>
+            <h2 className="text-lg font-black text-white mb-4">Estadísticas</h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <Users className="h-4 w-4" />
+                  Miembros
+                </div>
+                <span className="font-black">{members.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <ShoppingCart className="h-4 w-4" />
+                  Productos
+                </div>
+                <span className="font-black">{listings.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <TrendingUp className="h-4 w-4" />
+                  Actividad
+                </div>
+                <span className="font-black text-green-400">+12%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* RECOMENDACIONS */}
+          <RecommendationsComponent />
+
+          {/* VENDEDORES DESTACADOS */}
+          <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
+            <h2 className="text-lg font-black text-white mb-4">Vendedores destacados</h2>
             <input
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre o sector..."
-              className="mt-3 w-full rounded-2xl border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500"
+              placeholder="Buscar vendedores..."
+              className="w-full rounded-2xl border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500 mb-4"
             />
-            <div className="mt-4 max-h-[480px] space-y-3 overflow-y-auto">
-              {filteredMembers.map((member) => (
+            <div className="max-h-[400px] space-y-3 overflow-y-auto">
+              {filteredMembers.slice(0, 5).map((member) => (
                 <div
                   key={member.id}
                   className="rounded-2xl border border-white/10 bg-black/60 p-4"
                 >
-                  <p className="font-bold text-white">{member.full_name ?? "Sin nombre"}</p>
-                  <p className="text-xs text-zinc-500">{member.profession ?? "Profesional"}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
+                    <div className="flex-1">
+                      <p className="font-bold text-white">{member.full_name ?? "Sin nombre"}</p>
+                      <p className="text-xs text-zinc-500">{member.profession ?? "Profesional"}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-yellow-400">4.8</span>
+                    </div>
+                  </div>
                   {member.bio && (
                     <p className="mt-2 line-clamp-2 text-xs text-zinc-400">{member.bio}</p>
                   )}
-                  <Link
-                    href={`/mensajes?con=${member.id}`}
-                    className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20"
-                  >
-                    Conectar
-                  </Link>
+                  <div className="mt-3 flex gap-2">
+                    <Link
+                      href={`/mensajes?con=${member.id}`}
+                      className="flex-1 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20 text-center"
+                    >
+                      <MessageCircle className="mr-1 h-3 w-3 inline" />
+                      Mensaje
+                    </Link>
+                    <button
+                      onClick={() => toggleFollow(member.id)}
+                      className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
+                        following.has(member.id)
+                          ? "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
+                          : "border-yellow-400/30 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
+                      }`}
+                    >
+                      {following.has(member.id) ? "Siguiendo" : "Seguir"}
+                    </button>
+                  </div>
                 </div>
               ))}
               {filteredMembers.length === 0 && (
-                <p className="text-sm text-zinc-500">No hay miembros que coincidan.</p>
+                <p className="text-sm text-zinc-500">No hay vendedores que coincidan.</p>
               )}
+            </div>
+          </div>
+
+          {/* PRODUCTOS TRENDING */}
+          <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
+            <h2 className="text-lg font-black text-white mb-4">Productos Trending</h2>
+            <div className="space-y-3">
+              {listings.slice(0, 3).map((listing) => (
+                <Link
+                  key={listing.id}
+                  href={`/listing/${listing.id}`}
+                  className="block rounded-2xl border border-white/10 bg-black/60 p-3 hover:border-white/20 transition"
+                >
+                  <div className="flex gap-3">
+                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
+                      <Image
+                        src={listing.images?.[0] || "/placeholder.png"}
+                        alt={listing.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-white text-sm line-clamp-1">{listing.title}</p>
+                      <p className="text-xs text-zinc-500">{listing.category_name || "General"}</p>
+                      <p className="mt-1 font-black text-yellow-400">${listing.price}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </aside>

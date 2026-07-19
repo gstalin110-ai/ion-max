@@ -58,17 +58,12 @@ export function GlobalNav() {
               </button>
             </>
           ) : (
-            <>
-              <Link href="/login" className="transition hover:text-white">
-                Ingresar
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-white transition hover:border-white/20 hover:bg-white/10"
-              >
-                Registrarse
-              </Link>
-            </>
+            <Link
+              href="/invite"
+              className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-xs font-black text-yellow-400 transition hover:bg-yellow-400/20 hover:border-yellow-400/50"
+            >
+              Acceder
+            </Link>
           )}
         </nav>
       </div>

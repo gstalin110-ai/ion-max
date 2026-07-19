@@ -17,6 +17,11 @@ export interface Listing {
   tags?: string[];
   images: string[];
   view_count: number;
+  rating?: number;
+  review_count?: number;
+  seller_id?: string;
+  seller_name?: string;
+  seller_rating?: number;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +58,7 @@ export interface Profile {
   updated_at: string;
 }
 
-// ============ ORDERS ============
+// ============ ORDENS ============
 export type OrderStatus = "pending" | "paid" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded";
 
 export interface Order {
@@ -67,6 +72,54 @@ export interface Order {
   tracking_number?: string;
   created_at: string;
   updated_at: string;
+  order_items?: any[];
+  payments?: any[];
+}
+
+export interface OrderItem {
+  id?: string;
+  order_id?: string;
+  listing_id: string;
+  listing_title: string;
+  listing_image: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+}
+
+export interface ShippingAddress {
+  full_name: string;
+  phone: string;
+  address_line1: string;
+  address_line2?: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country: string;
+}
+
+export type PaymentMethod = "credit_card" | "debit_card" | "paypal" | "stripe" | "bank_transfer" | "cash_on_delivery";
+
+export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
+
+export interface Payment {
+  id: string;
+  order_id: string;
+  payment_method: PaymentMethod;
+  payment_status: PaymentStatus;
+  amount: number;
+  currency: string;
+  transaction_id?: string;
+  payment_gateway_response?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CheckoutFormData {
+  shipping_address: ShippingAddress;
+  payment_method: PaymentMethod;
+  save_payment_method?: boolean;
+  notes?: string;
 }
 
 // ============ WALLET ============
