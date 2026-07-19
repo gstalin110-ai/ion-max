@@ -57,11 +57,6 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Configuración de ambiente
-  env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://ion-max.vercel.app',
-  },
-  
   // Configuración de producción
   compress: true,
   
