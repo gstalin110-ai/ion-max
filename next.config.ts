@@ -65,11 +65,8 @@ const nextConfig: NextConfig = {
   // Configuración de producción
   compress: true,
   
-  // Configuración de webpack para mejor seguridad
-  webpack: (config) => {
-    config.resolve.fallback = { ...config.resolve.fallback, fs: false, net: false, tls: false };
-    return config;
-  },
+  // Configuración de Turbopack (Next.js 16 usa Turbopack por defecto)
+  turbopack: {},
 };
 
 export default nextConfig;
