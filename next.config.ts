@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
   
   // Configuración de ambiente
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://ion-max.vercel.app',
   },
   
   // Configuración de producción
