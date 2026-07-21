@@ -58,12 +58,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!data.session) {
           throw new Error("No se pudo establecer la sesión. Intenta de nuevo.");
         }
-        // FIX: Redirigir explícitamente después del login exitoso.
-        // Antes, signIn() resolvía sin navegar → el formulario se quedaba con
-        // redirecting=true esperando una navegación que nunca ocurría → loop infinito.
-        // Usamos router.push() para que Next.js ejecute el middleware (proxy.ts),
-        // el cual detecta user autenticado en /login y redirige a /comunidad.
-        router.push("/comunidad");
+        // Verificar si hay una URL de redirección guardada
+        const redirectUrl = localStorage.getItem("redirectAfterLogin");
+        if (redirectUrl) {
+          localStorage.removeItem("redirectAfterLogin");
+          router.push(redirectUrl);
+        } else {
+          // FIX: Redirigir explícitamente después del login exitoso.
+          // Antes, signIn() resolvía sin navegar → el formulario se quedaba con
+          // redirecting=true esperando una navegación que nunca ocurría → loop infinito.
+          // Usamos router.push() para que Next.js ejecute el middleware (proxy.ts),
+          // el cual detecta user autenticado en /login y redirige a /comunidad.
+          router.push("/comunidad");
+        }
       },
       signUp: async (email, password, fullName) => {
         const { error, data } = await supabase.auth.signUp({

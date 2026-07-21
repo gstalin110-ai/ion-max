@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { Listing } from "../lib/types";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,71 +15,8 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } },
 };
 
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
-};
-
 export default function Home() {
   const { t } = useLanguage();
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [cart] = useState<Listing[]>(() => {
-    if (typeof window === "undefined") return [];
-    const savedCart = localStorage.getItem("ion-cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
-  const [wishlist, setWishlist] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    const savedWishlist = localStorage.getItem("ion-wishlist");
-    return savedWishlist ? JSON.parse(savedWishlist) : [];
-  });
-
-  useEffect(() => {
-    async function cargarDatos() {
-      setLoading(true);
-      try {
-        const { data } = await supabase
-          .from("listings")
-          .select("*")
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
-        
-        if (data) setListings(data);
-      } catch (error) {
-        console.error("Error cargando datos:", error);
-      }
-      setLoading(false);
-    }
-    cargarDatos();
-  }, []);
-
-  const shopItems = listings.filter(i => i.category_name === 'product' || i.category_name === 'SHOP');
-  const academyItems = listings.filter(i => i.category_name === 'course' || i.category_name === 'ACADEMY');
-  const serviceItems = listings.filter(i => i.category_name === 'service' || i.category_name === 'SERVICES');
-
-  const toggleWishlist = (id: string) => {
-    setWishlist(prev => {
-      const updated = prev.includes(id) ? prev.filter(w => w !== id) : [...prev, id];
-      localStorage.setItem("ion-wishlist", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-zinc-400">Cargando experiencia IÓN MAX...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-black text-white selection:bg-white selection:text-black scroll-smooth">
@@ -105,7 +39,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="inline-block text-xs font-black uppercase tracking-widest text-yellow-400 mb-6 px-4 py-2 border border-yellow-400/30 rounded-full bg-yellow-400/10 backdrop-blur"
           >
-            {t("hero.badge")}
+            La Red Social del Ecosistema Premium
           </motion.span>
 
           <motion.h1
@@ -113,16 +47,18 @@ export default function Home() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.1 }}
             className="text-7xl md:text-9xl font-black tracking-tighter mb-6 leading-none"
-          >            <div className="mx-auto mb-8 h-32 w-32 rounded-full border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20">
+          >
+            <div className="mx-auto mb-8 h-32 w-32 rounded-full border border-white/10 bg-white/5 p-4 shadow-2xl shadow-black/20">
               <div className="relative h-full w-full">
                 <Image src="/logo.png" alt="Logo Ion Max" fill className="object-contain" />
               </div>
-            </div>            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
-              {t("hero.title1")}
+            </div>
+            <span className="bg-gradient-to-b from-white via-white to-zinc-400 bg-clip-text text-transparent drop-shadow-2xl">
+              IÓN MAX
             </span>
             <br />
             <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-600 bg-clip-text text-transparent drop-shadow-2xl">
-              {t("hero.title2")}
+              RED SOCIAL
             </span>
           </motion.h1>
 
@@ -132,7 +68,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-12 leading-relaxed font-light"
           >
-            {t("hero.description")}
+            Conecta, comparte y colabora con marcas, creadores y profesionales de alto impacto en la red social más exclusiva.
           </motion.p>
 
           <motion.div
@@ -141,17 +77,23 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="flex flex-col md:flex-row gap-4 justify-center"
           >
-            <a 
-              href="#shop"
-              className="group bg-white text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all duration-300 transform hover:scale-105"
-            >
-              {t("hero.explore")}
-            </a>
             <Link
               href="/marketplace"
+              className="group bg-white text-black px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all duration-300 transform hover:scale-105"
+            >
+              🛒 Marketplace
+            </Link>
+            <Link
+              href="/comunidad"
               className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
             >
-              {t("hero.marketplace")}
+              🚀 Entrar a la Comunidad
+            </Link>
+            <Link
+              href="/register"
+              className="group border-2 border-white text-white px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
+            >
+              Crear Cuenta
             </Link>
             <a 
               href="https://wa.me/593980887170"
@@ -185,20 +127,20 @@ export default function Home() {
             className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20 max-w-4xl mx-auto text-center"
           >
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
-              <p className="text-3xl md:text-4xl font-black text-white">{listings.length}+</p>
-              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.products")}</p>
+              <p className="text-3xl md:text-4xl font-black text-white">10K+</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">Publicaciones</p>
             </div>
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
               <p className="text-3xl md:text-4xl font-black text-white">50K+</p>
-              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.users")}</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">Miembros Activos</p>
             </div>
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
               <p className="text-3xl md:text-4xl font-black text-white">98%</p>
-              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.satisfaction")}</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">Conexiones Útiles</p>
             </div>
             <div className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-6 hover:bg-white/10 transition hover:scale-105 transform">
               <p className="text-3xl md:text-4xl font-black text-white">24/7</p>
-              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">{t("stats.support")}</p>
+              <p className="text-xs text-zinc-500 mt-2 uppercase tracking-wider">Interacción en Vivo</p>
             </div>
           </motion.div>
         </motion.div>
@@ -222,10 +164,10 @@ export default function Home() {
             className="grid md:grid-cols-4 gap-6"
           >
             {[
-              { icon: "✅", title: t("trust.guaranteed"), desc: t("trust.guaranteedDesc") },
+              { icon: "🛡️", title: "Comunidad Moderada", desc: "Perfiles verificados para asegurar conversaciones de valor real." },
               { icon: "🔒", title: t("trust.security"), desc: t("trust.securityDesc") },
-              { icon: "⚡", title: t("trust.delivery"), desc: t("trust.deliveryDesc") },
-              { icon: "👥", title: t("trust.support"), desc: t("trust.supportDesc") },
+              { icon: "⚡", title: "Conexiones Rápidas", desc: "Interactúa en tiempo real a través de mensajes y publicaciones." },
+              { icon: "👥", title: "Networking Premium", desc: "Accede de forma directa a mentores, fundadores y creadores." },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -241,226 +183,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ION SHOP - LUJO ABSOLUTO */}
-      {shopItems.length > 0 && (
-        <section id="shop" className="py-32 px-6 relative">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              className="mb-20 text-center"
-            >
-              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
-                CATEGORÍA 1 DE 3
-              </span>
-              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
-                ION <span className="text-transparent bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text">SHOP</span>
-              </h2>
-              <p className="text-zinc-400 max-w-2xl mx-auto">Productos de lujo seleccionados que definen tu autoridad. Solo lo mejor para quienes exigen calidad absoluta.</p>
-            </motion.div>
-
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              className="grid md:grid-cols-3 gap-8"
-            >
-              {shopItems.map((product) => (
-                <motion.div
-                  key={product.id}
-                  variants={scaleIn}
-                  className="group relative bg-gradient-to-br from-blue-950/30 to-black border border-blue-500/20 rounded-3xl overflow-hidden hover:border-blue-400/50 transition-all duration-500"
-                >
-                  {/* BADGE */}
-                  {product.tags && product.tags.length > 0 && (
-                    <div className="absolute top-6 right-6 z-20">
-                      <span className="bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg">
-                        {product.tags[0]}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* WISHLIST */}
-                  <button
-                    onClick={() => toggleWishlist(product.id)}
-                    className="absolute top-6 left-6 z-20 text-3xl transition-transform hover:scale-125 drop-shadow-lg"
-                  >
-                    {wishlist.includes(product.id) ? "❤️" : "🤍"}
-                  </button>
-
-                  {/* IMAGEN */}
-                  <div className="relative overflow-hidden h-80">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={product.images?.[0] || "/placeholder.png"}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 grayscale group-hover:grayscale-0"
-                      onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  </div>
-
-                  {/* CONTENIDO */}
-                  <div className="p-8">
-                    <h3 className="text-2xl font-black tracking-tight mb-2 group-hover:text-blue-400 transition">{product.title}</h3>
-                    <p className="text-zinc-500 text-sm leading-relaxed mb-6 line-clamp-2">{product.description}</p>
-
-                    {/* PRECIO Y STOCK */}
-                    <div className="flex items-end justify-between mb-6">
-                      <div>
-                        <p className="text-4xl font-black text-blue-400">${product.price}</p>
-                      </div>
-                    </div>
-
-                    {/* CTA */}
-                    <a
-                      href={`/listing/${product.id}`}
-                      className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] transition-all duration-300 uppercase text-sm tracking-wider block text-center group-hover:scale-105 transform"
-                    >
-                      Ver Detalles →
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* ION ACADEMY - EDUCACIÓN TRANSFORMADORA */}
-      {academyItems.length > 0 && (
-        <section id="academy" className="py-32 px-6 bg-gradient-to-b from-purple-950/10 to-black border-y border-purple-500/10">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              className="mb-20 text-center"
-            >
-              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
-                CATEGORÍA 2 DE 3
-              </span>
-              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
-                ION <span className="text-transparent bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text">ACADEMY</span>
-              </h2>
-              <p className="text-zinc-400 max-w-2xl mx-auto">Cursos diseñados por expertos. Transforma tu conocimiento en poder real y monetizable.</p>
-            </motion.div>
-
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              className="space-y-6"
-            >
-              {academyItems.map((course) => (
-                <motion.div
-                  key={course.id}
-                  variants={fadeInUp}
-                  className="group bg-gradient-to-r from-purple-950/40 to-black border border-purple-500/20 rounded-2xl p-8 hover:border-purple-400/50 hover:bg-purple-950/60 transition-all duration-500 flex flex-col md:flex-row gap-8 items-start md:items-center"
-                >
-                  {/* IMAGEN */}
-                  <div className="flex-shrink-0 w-full md:w-48 h-48 rounded-xl overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={course.images?.[0] || "/placeholder.png"}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                    />
-                  </div>
-
-                  {/* CONTENIDO */}
-                  <div className="flex-1">
-                    {course.tags && course.tags.length > 0 && (
-                      <span className="text-xs font-black uppercase tracking-widest text-purple-400 mb-3 inline-block">
-                        ✨ {course.tags[0]}
-                      </span>
-                    )}
-                    <h3 className="text-3xl font-black mb-3 group-hover:text-purple-400 transition">{course.title}</h3>
-                    <p className="text-zinc-400 mb-6 leading-relaxed">{course.description}</p>
-
-                    <div className="flex flex-wrap items-center gap-6 mb-6">
-                      <div>
-                        <p className="text-3xl font-black text-purple-400">${course.price}</p>
-                        <p className="text-xs text-zinc-500 mt-1">Acceso de por vida</p>
-                      </div>
-                    </div>
-
-                    <a
-                      href={`/listing/${course.id}`}
-                      className="inline-block bg-gradient-to-r from-purple-600 to-purple-500 text-white font-black py-3 px-8 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] transition-all uppercase text-sm tracking-wider group-hover:scale-105 transform"
-                    >
-                      Inscribirse Ahora →
-                    </a>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* ION SERVICES - OPERACIONES DE ALTO VALOR */}
-      {serviceItems.length > 0 && (
-        <section id="services" className="py-32 px-6">
-          <div className="max-w-7xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              className="mb-20 text-center"
-            >
-              <span className="text-xs font-black uppercase tracking-widest text-zinc-400 mb-4 inline-block px-4 py-2 border border-white/20 rounded-full bg-white/5">
-                CATEGORÍA 3 DE 3
-              </span>
-              <h2 className="text-6xl md:text-7xl font-black tracking-tighter mt-6 mb-6">
-                ION <span className="text-transparent bg-gradient-to-r from-green-400 to-green-600 bg-clip-text">SERVICES</span>
-              </h2>
-              <p className="text-zinc-400 max-w-2xl mx-auto">Servicios premium para empresas que exigen excelencia. Operaciones escalables y medibles.</p>
-            </motion.div>
-
-            <motion.div
-              variants={staggerContainer}
-              initial="hidden"
-              whileInView="visible"
-              className="grid md:grid-cols-2 gap-8"
-            >
-              {serviceItems.map((service) => (
-                <motion.div
-                  key={service.id}
-                  variants={scaleIn}
-                  className="group bg-gradient-to-br from-green-950/30 to-black border border-green-500/20 rounded-3xl p-10 hover:border-green-400/50 hover:bg-green-950/40 transition-all duration-500 flex flex-col"
-                >
-                  <div className="mb-8">
-                    <div className="w-14 h-14 bg-green-600/20 border border-green-500/40 rounded-2xl flex items-center justify-center text-3xl group-hover:bg-green-600/40 transition mb-6">
-                      ⚙️
-                    </div>
-                    {service.tags && service.tags.length > 0 && (
-                      <span className="text-xs font-black uppercase tracking-widest text-green-400 mb-3 inline-block">
-                        {service.tags[0]}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-2xl font-black mb-3 group-hover:text-green-400 transition">{service.title}</h3>
-                  <p className="text-zinc-400 flex-1 mb-8 leading-relaxed">{service.description}</p>
-
-                  <div className="mb-8">
-                    <p className="text-3xl font-black text-green-400 mb-2">${service.price}</p>
-                    <p className="text-xs text-zinc-500">Consultoría + Implementación</p>
-                  </div>
-
-                  <a
-                    href={`/listing/${service.id}`}
-                    className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-black py-3 rounded-xl hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] transition-all duration-300 uppercase text-sm tracking-wider group-hover:scale-105 transform text-center"
-                  >
-                    Ver Detalles →
-                  </a>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-      )}
-
       {/* SECCIÓN TESTIMONIOS PREMIUM */}
       <section className="py-32 px-6 bg-gradient-to-b from-black via-zinc-950 to-black border-y border-white/5">
         <div className="max-w-7xl mx-auto">
@@ -473,9 +195,9 @@ export default function Home() {
               TESTIMONIOS
             </span>
             <h2 className="text-5xl md:text-6xl font-black tracking-tighter mt-6 mb-6">
-              Lo Que Dicen <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Nuestros Clientes</span>
+              Lo Que Dicen <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Nuestros Miembros</span>
             </h2>
-            <p className="text-zinc-400 max-w-2xl mx-auto">Resultados reales de personas que transformaron su autoridad digital con IÓN MAX</p>
+            <p className="text-zinc-400 max-w-2xl mx-auto">Resultados reales de personas que transformaron su red de contactos con IÓN MAX Comunidad</p>
           </motion.div>
 
           <motion.div
@@ -488,19 +210,19 @@ export default function Home() {
               {
                 name: "Carlos Mendoza",
                 role: "CEO, TechVentures",
-                text: "IÓN MAX transformó completamente nuestra estrategia de autoridad digital. Las herramientas y servicios son de nivel empresarial.",
+                text: "IÓN MAX ha redefinido el significado de hacer networking. Las conversaciones y alianzas creadas en la comunidad son de primer nivel.",
                 rating: 5
               },
               {
                 name: "Ana Rodríguez",
                 role: "Consultora de Negocios",
-                text: "La calidad de los cursos y la comunidad profesional es incomparable. Mi facturación aumentó 300% en 6 meses.",
+                text: "El nivel de los profesionales aquí es inigualable. He conseguido socios estratégicos y clientes VIP directamente a través de las publicaciones.",
                 rating: 5
               },
               {
                 name: "Miguel Torres",
                 role: "Fundador, StartupX",
-                text: "El ecosistema completo me permite gestionar todo desde un solo lugar. Soporte premium y resultados garantizados.",
+                text: "Tener acceso directo y seguro a un ecosistema tan activo me ha permitido acelerar el crecimiento de mi startup con los consejos indicados.",
                 rating: 5
               }
             ].map((testimonial, i) => (
@@ -539,75 +261,29 @@ export default function Home() {
           className="max-w-4xl mx-auto text-center bg-gradient-to-br from-white/10 to-white/5 backdrop-blur border border-white/20 rounded-3xl p-16"
         >
           <h2 className="text-5xl md:text-6xl font-black mb-6 tracking-tighter">
-            ¿Listo para <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Transformar</span> tu Vida?
+            ¿Listo para <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">Transformar</span> tu Red de Contactos?
           </h2>
           <p className="text-zinc-300 text-lg mb-12 max-w-2xl mx-auto">
-            Únete a miles de personas que ya están experimentando el poder de IÓN MAX.
+            Únete hoy al círculo exclusivo de profesionales que lideran el ecosistema digital en IÓN MAX.
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <a
-              href="#shop"
+            <Link
+              href="/comunidad"
               className="bg-white text-black px-12 py-4 rounded-full font-black uppercase text-sm tracking-widest hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all hover:scale-105 transform"
             >
               Comenzar Ahora
-            </a>
+            </Link>
             <a
               href="https://wa.me/593980887170"
               target="_blank"
               rel="noopener noreferrer"
               className="border-2 border-white text-white px-12 py-4 rounded-full font-black uppercase text-sm tracking-widest hover:bg-white hover:text-black transition-all"
             >
-              💬 Hablar con Experto
+              💬 Hablar con un Asesor
             </a>
           </div>
         </motion.div>
       </section>
-
-      {/* ABOUT MEJORADO */}
-      <section id="nosotros" className="py-32 px-6 bg-gradient-to-b from-black via-zinc-950 to-black border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-6xl md:text-7xl font-black tracking-tighter mb-8">
-              Somos <span className="text-transparent bg-gradient-to-r from-white to-zinc-400 bg-clip-text">IÓN MAX</span>
-            </h2>
-            <p className="text-xl text-zinc-300 leading-relaxed">
-              No solo vendemos productos. Construimos imperios de autoridad digital.
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            className="space-y-8"
-          >
-            {[
-              {
-                title: "🎯 Nuestra Misión",
-                text: "Conectar emprendedores con herramientas, conocimiento y servicios que los conviertan en autoridades en sus industrias."
-              },
-              {
-                title: "🚀 Nuestra Visión",
-                text: "Ser la plataforma de confianza número uno donde la calidad premium y la transformación real son garantizadas."
-              },
-              {
-                title: "💎 Nuestros Valores",
-                text: "Excelencia absoluta, transparencia radical, y resultados medibles. Nada mediocre. Nunca."
-              }
-            ].map((item, i) => (
-              <motion.div key={i} variants={fadeInUp} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition">
-                <h3 className="text-2xl font-black mb-4">{item.title}</h3>
-                <p className="text-zinc-300 leading-relaxed text-lg">{item.text}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
 
       {/* FOOTER PREMIUM */}
       <footer className="bg-gradient-to-t from-black via-zinc-950 to-black border-t border-white/5">
@@ -626,18 +302,18 @@ export default function Home() {
                 <p className="text-xl font-black uppercase tracking-[0.24em] text-white">IÓN MAX</p>
               </div>
               <p className="text-zinc-500 text-sm leading-relaxed">
-                Autoridad digital. Lujo absoluto. Transformación real.
+                Ecosistema Profesional. Red Social Exclusiva.
               </p>
               <p className="text-zinc-600 text-xs mt-4">© 2026 Operaciones Globales</p>
             </div>
 
             {/* MENÚ */}
             <div>
-              <h4 className="font-black uppercase text-xs tracking-widest mb-6 text-zinc-400">Producto</h4>
+              <h4 className="font-black uppercase text-xs tracking-widest mb-6 text-zinc-400">Comunidad</h4>
               <ul className="space-y-3 text-sm">
-                <li><a href="#shop" className="text-zinc-500 hover:text-white transition">🛍️ Shop</a></li>
-                <li><a href="#academy" className="text-zinc-500 hover:text-white transition">📚 Academy</a></li>
-                <li><a href="#services" className="text-zinc-500 hover:text-white transition">⚙️ Services</a></li>
+                <li><Link href="/comunidad" className="text-zinc-500 hover:text-white transition">👥 Red Social</Link></li>
+                <li><Link href="/mensajes" className="text-zinc-500 hover:text-white transition">💬 Chat</Link></li>
+                <li><Link href="/profile" className="text-zinc-500 hover:text-white transition">👤 Mi Perfil</Link></li>
               </ul>
             </div>
 
@@ -680,10 +356,10 @@ export default function Home() {
               className="bg-gradient-to-r from-white/5 to-transparent backdrop-blur border border-white/10 rounded-2xl p-6 text-center"
             >
               <p className="text-zinc-400 text-sm mb-4">
-                Somos la marca de confianza de 10,000+ personas que transformaron sus vidas
+                La red de confianza de más de 10,000 profesionales.
               </p>
               <p className="text-xs text-zinc-600">
-                ⭐ Rating 4.9/5 — Garantía de Satisfacción 100% — Soporte 24/7
+                ⭐ Rating 4.9/5 — Soporte Premium — Conexiones Verificadas
               </p>
             </motion.div>
           </div>
@@ -704,7 +380,6 @@ export default function Home() {
       >
         💬
       </motion.a>
-
     </main>
   );
 }

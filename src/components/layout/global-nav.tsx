@@ -5,10 +5,12 @@ import Image from "next/image";
 import { useAuth } from "@/src/contexts/auth-context";
 import { isOwnerEmail } from "@/lib/constants";
 import { LanguageSelector } from "@/src/components/language-selector";
+import { useState } from "react";
 
 export function GlobalNav() {
   const { user, signOut } = useAuth();
   const isOwner = isOwnerEmail(user?.email);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-black/90 backdrop-blur">
@@ -24,9 +26,6 @@ export function GlobalNav() {
 
         <nav className="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
           <LanguageSelector />
-          <Link href="/" className="transition hover:text-white">
-            Inicio
-          </Link>
           <Link href="/marketplace" className="transition hover:text-white">
             Marketplace
           </Link>
@@ -38,9 +37,6 @@ export function GlobalNav() {
               <Link href="/mensajes" className="transition hover:text-white">
                 Mensajes
               </Link>
-              <Link href="/profile" className="transition hover:text-white">
-                Perfil
-              </Link>
               {isOwner && (
                 <Link
                   href="/admin"
@@ -49,13 +45,58 @@ export function GlobalNav() {
                   Administrar App
                 </Link>
               )}
-              <button
-                type="button"
-                onClick={() => void signOut()}
-                className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400 hover:text-white"
-              >
-                Salir
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+                >
+                  {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                </button>
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 backdrop-blur shadow-2xl">
+                    <div className="mb-3 border-b border-white/10 pb-3">
+                      <p className="text-sm font-bold text-white">
+                        {user.user_metadata?.full_name || user.email}
+                      </p>
+                      <p className="text-xs text-zinc-400">{user.email}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Link
+                        href="/profile"
+                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Mi Perfil
+                      </Link>
+                      <Link
+                        href="/ordenes"
+                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Mis Órdenes
+                      </Link>
+                      <Link
+                        href="/carrito"
+                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Carrito
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void signOut();
+                          setShowProfileMenu(false);
+                        }}
+                        className="block w-full rounded-xl px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+                      >
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <Link

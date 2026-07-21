@@ -5,10 +5,14 @@ import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { getListings } from "@/lib/supabase-helpers";
 import { useAppStore } from "@/src/store/app-store";
+import { useAuth } from "@/src/contexts/auth-context";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, Search, Sparkles, SlidersHorizontal, Star, TrendingUp, Clock } from "lucide-react";
 
 export function MarketplacePage() {
+  const { user } = useAuth();
+  const router = useRouter();
   const { searchQuery, selectedCategory, setSearchQuery } = useAppStore();
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -58,9 +62,25 @@ export function MarketplacePage() {
   }, [listings, searchQuery, selectedCategory, priceRange, minRating, sortBy]);
 
   const toggleWishlist = (id: string) => {
+    if (!user) {
+      // Guardar la URL actual para redirección después del login
+      localStorage.setItem("redirectAfterLogin", window.location.pathname);
+      router.push("/invite");
+      return;
+    }
     const next = wishlist.includes(id) ? wishlist.filter((x) => x !== id) : [...wishlist, id];
     setWishlist(next);
     localStorage.setItem("ion-wishlist", JSON.stringify(next));
+  };
+
+  const handleViewListing = (id: string) => {
+    if (!user) {
+      // Guardar la URL actual para redirección después del login
+      localStorage.setItem("redirectAfterLogin", `/listing/${id}`);
+      router.push("/invite");
+      return;
+    }
+    router.push(`/listing/${id}`);
   };
 
   return (
@@ -256,7 +276,7 @@ export function MarketplacePage() {
                     <Sparkles className="h-4 w-4" />
                     Premium
                   </div>
-                  <a href={`/listing/${item.id}`} className="rounded-full bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200 transition">Ver más</a>
+                  <button onClick={() => handleViewListing(item.id)} className="rounded-full bg-white px-4 py-2 text-sm font-black text-black hover:bg-zinc-200 transition">Ver más</button>
                 </div>
               </div>
             </motion.article>
