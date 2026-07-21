@@ -344,3 +344,133 @@ export async function processRefund(orderId: string, reason: string): Promise<vo
     status: "processed",
   });
 }
+
+// ========== FUNCIONES DE ADMINISTRACIÓN ==========
+
+export async function getAllUsers() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function banUser(userId: string, reason: string) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ 
+      banned: true,
+      ban_reason: reason,
+      banned_at: new Date().toISOString()
+    })
+    .eq("id", userId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function unbanUser(userId: string) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ 
+      banned: false,
+      ban_reason: null,
+      banned_at: null
+    })
+    .eq("id", userId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function setUserRole(userId: string, role: string) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role })
+    .eq("id", userId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function getAllListingsAdmin() {
+  const { data, error } = await supabase
+    .from("listings")
+    .select(`
+      *,
+      categories!inner(name),
+      profiles!inner(username, avatar_url, full_name)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function approveListing(listingId: string) {
+  const { error } = await supabase
+    .from("listings")
+    .update({ status: "active" })
+    .eq("id", listingId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function rejectListing(listingId: string, reason: string) {
+  const { error } = await supabase
+    .from("listings")
+    .update({ 
+      status: "rejected",
+      rejection_reason: reason
+    })
+    .eq("id", listingId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function getAllOrdersAdmin() {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      *,
+      order_items (*),
+      payments (*),
+      buyer:profiles!buyer_id(full_name, email),
+      seller:profiles!seller_id(full_name, email)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getSystemStats() {
+  const [usersCount, listingsCount, ordersCount, revenue] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("listings").select("id", { count: "exact", head: true }),
+    supabase.from("orders").select("id", { count: "exact", head: true }),
+    supabase.from("payments").select("amount").eq("payment_status", "completed")
+  ]);
+
+  const totalRevenue = revenue.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+
+  return {
+    users: usersCount.count || 0,
+    listings: listingsCount.count || 0,
+    orders: ordersCount.count || 0,
+    revenue: totalRevenue
+  };
+}
+
+export async function getRecentActivity() {
+  const [recentListings, recentOrders, recentUsers] = await Promise.all([
+    supabase.from("listings").select("*, profiles(full_name)").order("created_at", { ascending: false }).limit(10),
+    supabase.from("orders").select("*, buyer:profiles(full_name), seller:profiles(full_name)").order("created_at", { ascending: false }).limit(10),
+    supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(10)
+  ]);
+
+  return {
+    listings: recentListings.data || [],
+    orders: recentOrders.data || [],
+    users: recentUsers.data || []
+  };
+}

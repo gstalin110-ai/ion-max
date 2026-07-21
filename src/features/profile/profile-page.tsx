@@ -3,21 +3,28 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/contexts/auth-context";
 import { ensureProfile, getMyProfile, updateMyProfile } from "@/src/services/social";
+import { useRouter } from "next/navigation";
 
 export function ProfilePage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [profession, setProfession] = useState("");
   const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const userId = user.id;
     const email = user.email ?? "";
     const fullName = user.user_metadata?.nombre_completo as string | undefined;
+    
+    // Verificar si es el dueño
+    setIsOwner(email === "gstalin110@gmail.com");
+    
     async function load() {
       try {
         await ensureProfile(userId, email, fullName);
@@ -70,6 +77,15 @@ export function ProfilePage() {
           Completa tu perfil para que otros profesionales te encuentren en la comunidad.
         </p>
       </div>
+
+      {isOwner && (
+        <button
+          onClick={() => router.push("/admin")}
+          className="w-full rounded-2xl border border-yellow-400/30 bg-gradient-to-r from-yellow-400/10 to-yellow-500/10 px-6 py-4 text-sm font-black text-yellow-400 transition hover:from-yellow-400/20 hover:to-yellow-500/20"
+        >
+          🛡️ Panel de Administración
+        </button>
+      )}
 
       <form onSubmit={handleSave} className="space-y-4 rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
         <div>
