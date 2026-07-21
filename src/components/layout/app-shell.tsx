@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Package, Search, Settings, ShoppingBag, Sparkles, UserCircle2, Users } from "lucide-react";
+import { BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Search, Settings, Sparkles, UserCircle2, Users } from "lucide-react";
 import { useAppStore } from "@/src/store/app-store";
 import { useAuth } from "@/src/contexts/auth-context";
 
@@ -11,13 +11,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const baseNav = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Marketplace", href: "/marketplace", icon: ShoppingBag },
     { label: "Comunidad", href: "/comunidad", icon: Users },
     { label: "Mensajes", href: "/mensajes", icon: MessageSquare },
     { label: "Publicar", href: "/publish", icon: Sparkles },
-    { label: "Productos", href: "/products", icon: Package },
-    { label: "Servicios", href: "/services", icon: Sparkles },
-    { label: "Cursos", href: "/courses", icon: BarChart3 },
     { label: "Empleos", href: "/jobs", icon: BriefcaseBusiness },
     { label: "Empresas", href: "/companies", icon: Building2 },
     { label: "Favoritos", href: "/favorites", icon: Heart },
@@ -60,7 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Search className="h-4 w-4" />
                 <input placeholder="Buscar" className="w-40 bg-transparent outline-none" />
               </label>
-              <Link href="/carrito" className="rounded-full border border-white/10 bg-white px-4 py-2 text-sm font-bold text-black">🛒</Link>
             </div>
           </div>
         </header>

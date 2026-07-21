@@ -13,7 +13,8 @@ import {
   rejectListing,
   getAllOrdersAdmin,
   getSystemStats,
-  getRecentActivity
+  getRecentActivity,
+  getAllSurveys
 } from "@/lib/supabase-helpers";
 
 export function AdminDashboard() {
@@ -26,6 +27,7 @@ export function AdminDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [surveys, setSurveys] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || user.email !== "gstalin110@gmail.com") {
@@ -78,10 +80,20 @@ export function AdminDashboard() {
     }
   }
 
+  async function loadSurveys() {
+    try {
+      const data = await getAllSurveys();
+      setSurveys(data || []);
+    } catch (error) {
+      console.error("Error loading surveys:", error);
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "users") loadUsers();
     if (activeTab === "listings") loadListings();
     if (activeTab === "orders") loadOrders();
+    if (activeTab === "surveys") loadSurveys();
   }, [activeTab]);
 
   if (loading) {
@@ -163,6 +175,16 @@ export function AdminDashboard() {
           }`}
         >
           Órdenes
+        </button>
+        <button
+          onClick={() => setActiveTab("surveys")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            activeTab === "surveys"
+              ? "bg-yellow-400 text-black"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          Encuestas
         </button>
       </div>
 
@@ -313,6 +335,60 @@ export function AdminDashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "surveys" && (
+        <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
+          <h2 className="text-xl font-black text-white">Respuestas de Encuestas ({surveys.length})</h2>
+          <p className="text-sm text-zinc-400 mt-1 mb-6">
+            Visualiza las respuestas de los usuarios para la mejora de IÓN MAX.
+          </p>
+          <div className="mt-4 space-y-6">
+            {surveys.length === 0 ? (
+              <div className="text-center py-12 text-zinc-500">
+                Aún no hay respuestas de encuestas registradas.
+              </div>
+            ) : (
+              surveys.map((survey, sIndex) => (
+                <div key={survey.id || sIndex} className="rounded-2xl border border-white/10 bg-black/60 p-6 space-y-4">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                    <span className="text-xs font-black text-yellow-400 uppercase tracking-wider">
+                      Respuesta #{surveys.length - sIndex}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {survey.created_at ? new Date(survey.created_at).toLocaleString('es-ES') : "Fecha desconocida"}
+                    </span>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2 text-sm">
+                    {[
+                      { id: 1, q: "¿Qué edad tienes?" },
+                      { id: 2, q: "¿Cuál es tu ocupación principal?" },
+                      { id: 3, q: "¿Qué tan importante es para ti tener una plataforma unificada para negocios?" },
+                      { id: 4, q: "¿Qué funcionalidad te interesa más?" },
+                      { id: 5, q: "¿Con qué frecuencia usarías una plataforma como IÓN MAX?" },
+                      { id: 6, q: "¿Qué presupuesto mensual estarías dispuesto a invertir en una plataforma premium?" },
+                      { id: 7, q: "¿Prefieres aprender mediante cursos o contenido interactivo?" },
+                      { id: 8, q: "¿Qué tan importante es la comunidad y networking para ti?" },
+                      { id: 9, q: "¿Utilizarías herramientas de IA para mejorar tu productividad?" },
+                      { id: 10, q: "¿Qué país te gustaría que IÓN MAX priorice para su expansión?" },
+                      { id: 11, q: "¿Qué te gustaría mejorar en plataformas similares que has usado?" },
+                      { id: 12, q: "¿Algún comentario o sugerencia adicional para IÓN MAX?" }
+                    ].map((question) => {
+                      const answer = survey.answers?.[question.id];
+                      if (!answer) return null;
+                      return (
+                        <div key={question.id} className="p-3 rounded-xl bg-zinc-950/50 border border-white/5 space-y-1">
+                          <p className="text-xs text-zinc-400 font-bold">{question.id}. {question.q}</p>
+                          <p className="text-white font-medium">{answer}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

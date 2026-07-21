@@ -66,3 +66,34 @@ ON CONFLICT DO NOTHING;
 -- FROM public.user_roles ur
 -- JOIN auth.users u ON u.id = ur.user_id
 -- JOIN public.roles r ON r.id = ur.role_id;
+
+-- ============================================
+-- TABLA DE RESPUESTAS DE ENCUESTA (SURVEY)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.survey_responses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    answers JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Habilitar RLS
+ALTER TABLE public.survey_responses ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de seguridad para survey_responses
+-- Cualquiera puede insertar (incluso usuarios no autenticados, ya que la encuesta es opcional y accesible desde el landing)
+DROP POLICY IF EXISTS "Permitir inserción de encuestas para todos" ON public.survey_responses;
+CREATE POLICY "Permitir inserción de encuestas para todos" 
+    ON public.survey_responses FOR INSERT 
+    WITH CHECK (true);
+
+-- Solo el dueño/admin puede leer las respuestas
+DROP POLICY IF EXISTS "Solo admin/owner puede leer las respuestas de encuestas" ON public.survey_responses;
+CREATE POLICY "Solo admin/owner puede leer las respuestas de encuestas" 
+    ON public.survey_responses FOR SELECT 
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.id = auth.uid() 
+            AND (profiles.role = 'admin' OR profiles.role = 'owner' OR profiles.email = 'gstalin110@gmail.com')
+        )
+    );

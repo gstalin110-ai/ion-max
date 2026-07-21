@@ -474,3 +474,15 @@ export async function getRecentActivity() {
     users: recentUsers.data || []
   };
 }
+
+// ========== FUNCIONES DE ENCUESTAS (SURVEY) ==========
+
+export async function getAllSurveys() {
+  const { data, error } = await supabase
+    .from("survey_responses")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}

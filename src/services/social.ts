@@ -28,6 +28,11 @@ export interface CommunityPost {
   content: string;
   created_at: string;
   author?: CommunityMember | null;
+  image_url?: string | null;
+  images?: string[] | null;
+  media_type?: string | null;
+  likes_count?: number | null;
+  comments_count?: number | null;
 }
 
 export interface DirectMessage {
@@ -82,7 +87,7 @@ export async function getCommunityMembers(excludeUserId?: string): Promise<Commu
 export async function getCommunityPosts(): Promise<CommunityPost[]> {
   const { data, error } = await supabase
     .from("community_posts")
-    .select("id, user_id, content, created_at, profiles:user_id ( id, email, full_name, bio, profession, avatar_url )")
+    .select("id, user_id, content, created_at, image_url, images, media_type, likes_count, comments_count, profiles:user_id ( id, email, full_name, bio, profession, avatar_url )")
     .order("created_at", { ascending: false })
     .limit(40);
 
@@ -97,6 +102,11 @@ export async function getCommunityPosts(): Promise<CommunityPost[]> {
       user_id: string;
       content: string;
       created_at: string;
+      image_url?: string | null;
+      images?: string[] | null;
+      media_type?: string | null;
+      likes_count?: number | null;
+      comments_count?: number | null;
       profiles?: CommunityMember | CommunityMember[] | null;
     };
     const author = Array.isArray(raw.profiles) ? raw.profiles[0] ?? null : raw.profiles ?? null;
@@ -105,15 +115,26 @@ export async function getCommunityPosts(): Promise<CommunityPost[]> {
       user_id: raw.user_id,
       content: raw.content,
       created_at: raw.created_at,
+      image_url: raw.image_url,
+      images: raw.images,
+      media_type: raw.media_type,
+      likes_count: raw.likes_count,
+      comments_count: raw.comments_count,
       author,
     };
   });
 }
 
-export async function createCommunityPost(userId: string, content: string) {
+export async function createCommunityPost(userId: string, content: string, imageUrl?: string, images?: string[]) {
   const { data, error } = await supabase
     .from("community_posts")
-    .insert({ user_id: userId, content })
+    .insert({ 
+      user_id: userId, 
+      content,
+      image_url: imageUrl,
+      images,
+      media_type: imageUrl || (images && images.length > 0) ? 'image' : 'text'
+    })
     .select()
     .single();
 

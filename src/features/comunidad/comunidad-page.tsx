@@ -24,8 +24,11 @@ import {
   ensureProfile,
   getCommunityMembers,
   getCommunityPosts,
+  getDirectMessages,
+  sendDirectMessage,
   type CommunityMember,
   type CommunityPost,
+  type DirectMessage,
 } from "@/src/services/social";
 import { getListings } from "@/lib/supabase-helpers";
 import { Listing } from "@/lib/types";
@@ -38,10 +41,31 @@ export function ComunidadPage() {
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [newPost, setNewPost] = useState("");
+  const [postImages, setPostImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "products" | "posts">("all");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showChatPanel, setShowChatPanel] = useState(false);
+  const [selectedChatUser, setSelectedChatUser] = useState<CommunityMember | null>(null);
+  const [chatMessages, setChatMessages] = useState<DirectMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  
+  // Sugerencias de ayuda para escribir
+  const suggestions = [
+    "Oferta especial: ",
+    "Promoción limitada: ",
+    "Nuevo producto disponible: ",
+    "Servicio premium: ",
+    "Curso exclusivo: ",
+    "Oportunidad de negocio: ",
+    "¡Gran descuento! ",
+    "Solo por hoy: ",
+    "Edición limitada: ",
+    "Calidad garantizada: "
+  ];
   
   // Sistema de likes y comentarios
   const [likes, setLikes] = useState<Record<string, number>>({});
@@ -90,6 +114,31 @@ export function ComunidadPage() {
     });
   };
 
+  const openChat = async (member: CommunityMember) => {
+    if (!user) return;
+    setSelectedChatUser(member);
+    setShowChatPanel(true);
+    try {
+      const messages = await getDirectMessages(user.id, member.id);
+      setChatMessages(messages);
+    } catch (error) {
+      console.error('Error loading chat:', error);
+    }
+  };
+
+  const sendChatMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !selectedChatUser || !chatInput.trim()) return;
+    try {
+      await sendDirectMessage(user.id, selectedChatUser.id, chatInput.trim());
+      setChatInput("");
+      const messages = await getDirectMessages(user.id, selectedChatUser.id);
+      setChatMessages(messages);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
   const { data: listings = [] } = useQuery({
     queryKey: ["listings"],
     queryFn: getListings,
@@ -115,13 +164,80 @@ export function ComunidadPage() {
     void load();
   }, [user]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    const validFiles = files.filter(file => file.type.startsWith('image/'));
+    if (validFiles.length === 0) {
+      alert('Por favor selecciona solo archivos de imagen');
+      return;
+    }
+
+    setPostImages(prev => [...prev, ...validFiles]);
+    
+    // Crear previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setPostImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImagesToSupabase = async (files: File[]): Promise<string[]> => {
+    const { supabase } = await import("@/src/lib/supabase/client");
+    const uploadedUrls: string[] = [];
+    
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random()}.${fileExt}`;
+      const filePath = `community-posts/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('community-images')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        continue;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('community-images')
+        .getPublicUrl(filePath);
+      
+      uploadedUrls.push(publicUrl);
+    }
+    
+    return uploadedUrls;
+  };
+
   async function handlePost(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !newPost.trim()) return;
     setPosting(true);
     try {
-      await createCommunityPost(user.id, newPost.trim());
+      let imageUrls: string[] = [];
+      if (postImages.length > 0) {
+        imageUrls = await uploadImagesToSupabase(postImages);
+      }
+      
+      await createCommunityPost(
+        user.id, 
+        newPost.trim(), 
+        imageUrls[0], 
+        imageUrls
+      );
       setNewPost("");
+      setPostImages([]);
+      setImagePreviews([]);
       const postsData = await getCommunityPosts();
       setPosts(postsData);
     } catch (error) {
@@ -210,21 +326,80 @@ export function ComunidadPage() {
 
           {/* FORMULARIO DE PUBLICACIÓN */}
           <form onSubmit={handlePost} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
-              <textarea
-                value={newPost}
-                onChange={(e) => setNewPost(e.target.value)}
-                placeholder="Comparte una oferta, promoción o actualización..."
-                rows={2}
-                className="flex-1 resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-yellow-400"
-              />
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex-shrink-0" />
+              <div className="flex-1 space-y-3">
+                <div className="relative">
+                  <textarea
+                    value={newPost}
+                    onChange={(e) => {
+                      setNewPost(e.target.value);
+                      setShowSuggestions(e.target.value.length > 0);
+                    }}
+                    onFocus={() => setShowSuggestions(newPost.length > 0)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    placeholder="Comparte una oferta, promoción o actualización..."
+                    rows={3}
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white placeholder-zinc-500 outline-none focus:border-yellow-400"
+                  />
+                  
+                  {/* Sugerencias de ayuda */}
+                  {showSuggestions && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 rounded-xl border border-white/10 bg-zinc-950 p-2 shadow-2xl">
+                      <p className="text-xs text-zinc-500 mb-2 px-2">Sugerencias:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {suggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setNewPost(prev => prev + suggestion)}
+                            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300 hover:bg-white/10 hover:text-white transition"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Previews de imágenes */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-xl"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
-                  <span className="text-sm">📷</span>
-                </button>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
+                    📷
+                  </button>
+                </label>
                 <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
                   <Sparkles className="h-4 w-4" />
                 </button>
@@ -354,6 +529,34 @@ export function ComunidadPage() {
                       </div>
                       <p className="text-sm leading-relaxed text-zinc-300">{item.data.content}</p>
                       
+                      {/* Imágenes del post */}
+                      {(item.data.image_url || (item.data.images && item.data.images.length > 0)) && (
+                        <div className="mt-4 grid grid-cols-2 gap-2">
+                          {item.data.image_url && (
+                            <div className="relative h-48 w-full overflow-hidden rounded-xl">
+                              <Image
+                                src={item.data.image_url}
+                                alt="Post image"
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          )}
+                          {item.data.images && item.data.images.map((img, idx) => (
+                            <div key={idx} className="relative h-48 w-full overflow-hidden rounded-xl">
+                              <Image
+                                src={img}
+                                alt={`Post image ${idx + 1}`}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
                       {/* Likes y Comentarios */}
                       <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500 border-t border-white/10 pt-4">
                         <button
@@ -422,6 +625,74 @@ export function ComunidadPage() {
           </div>
         </div>
 
+        {/* PANEL DE CHAT FLOTANTE */}
+        {showChatPanel && selectedChatUser && (
+          <motion.div
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="fixed bottom-4 right-4 w-80 h-96 rounded-3xl border border-white/10 bg-zinc-950/95 backdrop-blur shadow-2xl z-50 flex flex-col"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-sm font-black text-black">
+                  {selectedChatUser.full_name?.charAt(0) || "?"}
+                </div>
+                <div>
+                  <p className="font-bold text-white text-sm">{selectedChatUser.full_name || "Usuario"}</p>
+                  <p className="text-xs text-zinc-500">{selectedChatUser.profession || "Miembro"}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowChatPanel(false)}
+                className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {chatMessages.length === 0 ? (
+                <p className="text-center text-zinc-500 text-sm">Inicia una conversación</p>
+              ) : (
+                chatMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                        msg.sender_id === user?.id
+                          ? "bg-yellow-400 text-black"
+                          : "bg-white/10 text-white"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <form onSubmit={sendChatMessage} className="p-4 border-t border-white/10">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Escribe un mensaje..."
+                  className="flex-1 rounded-full border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-yellow-400 p-2 text-black hover:bg-yellow-300 transition"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
         <aside className="space-y-4">
           {/* ESTADÍSTICAS */}
           <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
@@ -485,13 +756,13 @@ export function ComunidadPage() {
                     <p className="mt-2 line-clamp-2 text-xs text-zinc-400">{member.bio}</p>
                   )}
                   <div className="mt-3 flex gap-2">
-                    <Link
-                      href={`/mensajes?con=${member.id}`}
+                    <button
+                      onClick={() => openChat(member)}
                       className="flex-1 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20 text-center"
                     >
                       <MessageCircle className="mr-1 h-3 w-3 inline" />
                       Mensaje
-                    </Link>
+                    </button>
                     <button
                       onClick={() => toggleFollow(member.id)}
                       className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
