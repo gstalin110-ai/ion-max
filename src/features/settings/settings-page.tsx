@@ -5,10 +5,11 @@ import { useAuth } from "@/src/contexts/auth-context";
 import { supabase } from "@/src/lib/supabase/client";
 import toast from "react-hot-toast";
 import { PaymentMethodsSection } from "./payment-methods-section";
+import { InvoicesSection } from "./invoices-section";
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "notifications" | "ai" | "payments">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "notifications" | "ai" | "payments" | "invoices">("profile");
   const [isSaving, setIsSaving] = useState(false);
 
   // Profile form state
@@ -202,6 +203,16 @@ export function SettingsPage() {
           }`}
         >
           Métodos de Pago
+        </button>
+        <button
+          onClick={() => setActiveTab("invoices")}
+          className={`px-4 py-2 rounded-xl text-sm font-black transition-all whitespace-nowrap ${
+            activeTab === "invoices"
+              ? "bg-white text-black"
+              : "bg-white/5 text-zinc-400 hover:bg-white/10"
+          }`}
+        >
+          Facturas
         </button>
       </div>
 
@@ -428,6 +439,13 @@ export function SettingsPage() {
       {activeTab === "payments" && (
         <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
           <PaymentMethodsSection />
+        </div>
+      )}
+
+      {/* Invoices Tab */}
+      {activeTab === "invoices" && (
+        <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
+          <InvoicesSection />
         </div>
       )}
     </div>
