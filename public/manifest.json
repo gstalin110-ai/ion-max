@@ -1,0 +1,41 @@
+{
+  "name": "IÓN MAX",
+  "short_name": "IÓN MAX",
+  "description": "Marketplace premium para Ecuador - Compra y vende productos, servicios y más",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#facc15",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "business"],
+  "shortcuts": [
+    {
+      "name": "Marketplace",
+      "short_name": "Tienda",
+      "description": "Explorar el marketplace",
+      "url": "/marketplace",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Comunidad",
+      "short_name": "Social",
+      "description": "Ver la comunidad",
+      "url": "/comunidad",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
