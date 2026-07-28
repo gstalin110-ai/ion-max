@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/src/lib/supabase/client";
 import toast from "react-hot-toast";
 
-export default function ResetPasswordConfirmPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -113,5 +113,13 @@ export default function ResetPasswordConfirmPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function ResetPasswordConfirmPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-white">Cargando...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
