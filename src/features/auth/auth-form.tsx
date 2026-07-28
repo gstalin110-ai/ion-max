@@ -187,7 +187,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             </a>
           )}
           {mode !== "reset" && (
-            <a href="/reset-password" className="hover:text-white">
+            <a href="/auth/reset-password" className="hover:text-white">
               Recuperar contraseña
             </a>
           )}
