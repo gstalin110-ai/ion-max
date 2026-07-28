@@ -2,8 +2,42 @@
 
 import { AuthForm } from "@/src/features/auth/auth-form";
 import { Download, Smartphone, Monitor } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function LoginPage() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      // Si no hay prompt, mostrar instrucciones
+      alert('Para instalar:\n\n📱 En móvil: Toca "Compartir" → "Agregar a inicio"\n💻 En escritorio: Toca el icono de instalación en la barra de dirección');
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setCanInstall(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.18),_transparent_42%),linear-gradient(135deg,_#050505,_#111)] px-4 py-12 text-white">
       <div className="w-full max-w-md space-y-6">
@@ -38,12 +72,12 @@ export default function LoginPage() {
             </div>
           </div>
           
-          <a
-            href="/"
+          <button
+            onClick={handleInstallClick}
             className="block mt-4 w-full bg-gradient-to-r from-yellow-400 to-yellow-500 py-4 text-sm font-black uppercase tracking-wider text-black rounded-xl hover:shadow-[0_0_40px_rgba(250,204,21,0.6)] transition-all duration-300 text-center"
           >
             🚀 Instalar Ahora
-          </a>
+          </button>
           
           <p className="mt-3 text-xs text-center text-zinc-500">
             Es gratis y funciona sin conexión
