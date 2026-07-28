@@ -313,6 +313,7 @@ export interface CartItem {
   price: number;
   images: string[];
   cantidad: number;
+  user_id: string;
 }
 
 // ============ NUEVOS TIPOS DE SRC/TYPES/INDEX.TS ============

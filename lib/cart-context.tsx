@@ -4,6 +4,7 @@ import { Listing } from "./types";
 export interface CartEntry {
   listing: Listing;
   quantity: number;
+  user_id: string;
 }
 
 interface CartContextType {
@@ -45,7 +46,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               if (existing) {
                 existing.quantity += 1;
               } else {
-                entries.push({ listing: item, quantity: 1 });
+                entries.push({ listing: item, quantity: 1, user_id: item.seller_id });
               }
             }
             setCartEntries(entries);
@@ -84,7 +85,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       updated[existingIndex].quantity += quantity;
       saveCart(updated);
     } else {
-      saveCart([...cartEntries, { listing: item, quantity }]);
+      saveCart([...cartEntries, { listing: item, quantity, user_id: item.seller_id }]);
     }
   };
 
