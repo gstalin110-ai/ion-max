@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BriefcaseBusiness, Building2, CreditCard, Heart, LayoutDashboard, MessageSquare, Search, Settings, Sparkles, UserCircle2, Users } from "lucide-react";
+import { BriefcaseBusiness, Building2, Heart, LayoutDashboard, MessageSquare, Search, Settings, Sparkles, UserCircle2, Users } from "lucide-react";
 import { useAppStore } from "@/src/store/app-store";
 import { useAuth } from "@/src/contexts/auth-context";
 
@@ -17,7 +17,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { label: "Empleos", href: "/jobs", icon: BriefcaseBusiness },
     { label: "Empresas", href: "/companies", icon: Building2 },
     { label: "Favoritos", href: "/favorites", icon: Heart },
-    { label: "Billetera", href: "/wallet", icon: CreditCard },
     { label: "Perfil", href: "/profile", icon: UserCircle2 },
     { label: "Configuración", href: "/settings", icon: Settings },
   ];

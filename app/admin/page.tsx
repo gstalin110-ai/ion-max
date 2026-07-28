@@ -1,10 +1,10 @@
 import { AdminDashboard } from "@/src/features/admin/admin-dashboard";
-import { ProtectedRoute } from "@/src/components/protected-route";
+import { AdminRoute } from "@/src/components/admin-route";
 
 export default function AdminRoute() {
   return (
-    <ProtectedRoute>
+    <AdminRoute>
       <AdminDashboard />
-    </ProtectedRoute>
+    </AdminRoute>
   );
 }
