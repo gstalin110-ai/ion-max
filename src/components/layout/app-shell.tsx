@@ -4,10 +4,12 @@ import Link from "next/link";
 import { BriefcaseBusiness, Building2, Heart, LayoutDashboard, MessageSquare, Search, Settings, Sparkles, UserCircle2, Users } from "lucide-react";
 import { useAppStore } from "@/src/store/app-store";
 import { useAuth } from "@/src/contexts/auth-context";
+import { isOwnerEmail } from "@/lib/constants";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { isSidebarOpen, setSidebarOpen } = useAppStore();
-  useAuth();
+  const { user } = useAuth();
+  const isOwner = isOwnerEmail(user?.email);
 
   const baseNav = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -21,7 +23,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { label: "Configuración", href: "/settings", icon: Settings },
   ];
 
-  const navItems = baseNav;
+  const navItems = isOwner 
+    ? [...baseNav, { label: "Panel Admin", href: "/admin", icon: Settings }]
+    : baseNav;
 
   return (
     <div className="min-h-screen bg-black text-white">
