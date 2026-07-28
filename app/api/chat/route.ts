@@ -1,9 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimitMiddleware } from "@/src/lib/rate-limiter";
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting basado en IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    rateLimitMiddleware(ip, '/api/chat');
+
     const { prompt, userId } = await req.json();
 
     if (!prompt) {
