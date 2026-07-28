@@ -36,6 +36,7 @@ import toast from "react-hot-toast";
 
 interface CartItem extends Listing {
   quantity: number;
+  user_id: string;
 }
 
 export function CheckoutPage() {
