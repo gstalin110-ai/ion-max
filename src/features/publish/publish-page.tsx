@@ -8,6 +8,8 @@ import { supabase } from "@/src/lib/supabase/client";
 import { generateOptimizedDescription } from "@/src/services/ai-marketing-service";
 import toast from "react-hot-toast";
 import { Sparkles, Upload, X, Image as ImageIcon } from "lucide-react";
+import { sanitizeText, sanitizeName, sanitizeDecimal, sanitizeLongText } from "@/src/lib/sanitizer";
+import { logger } from "@/src/lib/logger";
 
 const types = ["Producto Físico", "Servicio", "Curso", "Enlace Afiliado"] as const;
 
@@ -34,6 +36,17 @@ export function PublishPage() {
     setIsSubmitting(true);
 
     try {
+      // Sanitizar datos antes de enviar
+      const sanitizedData: ListingFormData = {
+        title: sanitizeName(formData.title),
+        description: sanitizeLongText(formData.description),
+        price: sanitizeDecimal(formData.price).toString(),
+        category_id: formData.category_id,
+        location: sanitizeText(formData.location || ""),
+        tags: sanitizeText(formData.tags || ""),
+        images: formData.images,
+      };
+
       // Mapear tipo a category_id
       const categoryMap: Record<string, string> = {
         "Producto Físico": "product",
@@ -43,9 +56,15 @@ export function PublishPage() {
       };
 
       const submissionData: ListingFormData = {
-        ...formData,
+        ...sanitizedData,
         category_id: categoryMap[selectedType],
       };
+
+      logger.info('Listing submission attempt', { 
+        userId: user?.id, 
+        title: sanitizedData.title,
+        category: categoryMap[selectedType]
+      }, user?.id);
 
       await createListing(submissionData);
       
