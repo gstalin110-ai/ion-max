@@ -6,7 +6,7 @@ export type ListingCategory = "product" | "service" | "course" | "affiliate" | "
 
 export interface Listing {
   id: string;
-  user_id: string;
+  seller_id: string;
   title: string;
   description: string;
   price: number;
@@ -19,7 +19,6 @@ export interface Listing {
   view_count: number;
   rating?: number;
   review_count?: number;
-  seller_id?: string;
   seller_name?: string;
   seller_rating?: number;
   created_at: string;

@@ -52,7 +52,7 @@ export async function createListing(formData: ListingFormData) {
 
   const { error, data } = await supabase.from("listings").insert([
     {
-      user_id: user.id,
+      seller_id: user.id,
       title: formData.title,
       description: formData.description,
       price: parseFloat(formData.price),
@@ -60,7 +60,7 @@ export async function createListing(formData: ListingFormData) {
       location: formData.location,
       tags: formData.tags ? [formData.tags] : [],
       images: formData.images,
-      status: "pending_review",
+      status: "active",
     },
   ]).select().single();
 
