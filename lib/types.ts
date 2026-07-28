@@ -168,7 +168,7 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   message_text?: string;
-  attachments: any[];
+  attachments: string[];
   is_read: boolean;
   created_at: string;
 }
