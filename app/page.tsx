@@ -39,7 +39,7 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="inline-block text-xs font-black uppercase tracking-widest text-yellow-400 mb-6 px-4 py-2 border border-yellow-400/30 rounded-full bg-yellow-400/10 backdrop-blur"
           >
-            La Red Social del Ecosistema Premium
+            El Market Social del Ecosistema Premium
           </motion.span>
 
           <motion.h1
@@ -58,7 +58,7 @@ export default function Home() {
             </span>
             <br />
             <span className="bg-gradient-to-r from-white via-zinc-300 to-zinc-600 bg-clip-text text-transparent drop-shadow-2xl">
-              RED SOCIAL
+              MARKET SOCIAL
             </span>
           </motion.h1>
 
@@ -68,7 +68,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-lg md:text-xl text-zinc-300 max-w-3xl mx-auto mb-12 leading-relaxed font-light"
           >
-            Conecta, comparte y colabora con marcas, creadores y profesionales de alto impacto en la red social más exclusiva.
+            Conecta, comparte y colabora con marcas, creadores y profesionales de alto impacto en el market social más exclusivo.
           </motion.p>
 
           <motion.div
@@ -302,7 +302,7 @@ export default function Home() {
                 <p className="text-xl font-black uppercase tracking-[0.24em] text-white">IÓN MAX</p>
               </div>
               <p className="text-zinc-500 text-sm leading-relaxed">
-                Ecosistema Profesional. Red Social Exclusiva.
+                Ecosistema Profesional. Market Social Exclusivo.
               </p>
               <p className="text-zinc-600 text-xs mt-4">© 2026 Operaciones Globales</p>
             </div>

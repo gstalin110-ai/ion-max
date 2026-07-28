@@ -17,15 +17,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IÓN MAX - Lujo, Educación & Servicios",
-  description: "La marca que redefine la autoridad digital. Productos premium, cursos innovadores y servicios de alto valor.",
-  keywords: "lujo, tecnología, cursos online, servicios digitales, autoridad online",
+  title: "IÓN MAX MARKET SOCIAL - Marketplace & Red Social",
+  description: "ION MAX MARKET SOCIAL: La plataforma que combina marketplace premium con red social profesional. Compra, vende y conecta.",
+  keywords: "marketplace, red social, tienda online, comunidad, ecuador, negocios",
   manifest: "/manifest.json",
   themeColor: "#facc15",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "IÓN MAX",
+    title: "IÓN MAX MARKET SOCIAL",
   },
   icons: {
     icon: "/icon-192.png",
