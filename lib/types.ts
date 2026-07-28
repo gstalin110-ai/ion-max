@@ -1,5 +1,57 @@
 // Tipos para todo el ecosistema de IÓN MAX
 
+// ============ MÉTODOS DE PAGO DEL VENDEDOR ============
+export type PaymentMethodType = 'payment_link' | 'qr_code';
+
+export interface SellerPaymentMethod {
+  id: string;
+  seller_id: string;
+  type: PaymentMethodType;
+  provider: string;
+  label: string;
+  value: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============ FACTURAS ELECTRÓNICAS ============
+export type InvoiceStatus = 'pending' | 'generated' | 'sent' | 'cancelled';
+
+export interface Invoice {
+  id: string;
+  order_id: string;
+  seller_id: string;
+  buyer_id: string;
+  invoice_number: string;
+  invoice_date: string;
+  subtotal: number;
+  tax_amount: number;
+  total_amount: number;
+  currency: string;
+  
+  // Datos del vendedor
+  seller_ruc?: string;
+  seller_razon_social?: string;
+  seller_address?: string;
+  seller_phone?: string;
+  seller_email?: string;
+  
+  // Datos del comprador
+  buyer_ruc?: string;
+  buyer_razon_social?: string;
+  buyer_address?: string;
+  buyer_phone?: string;
+  buyer_email?: string;
+  
+  status: InvoiceStatus;
+  pdf_url?: string;
+  xml_url?: string;
+  owner_reference: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // ============ LISTINGS (PUBLICACIONES) ============
 export type ListingStatus = "pending_review" | "active" | "paused" | "sold" | "deleted";
 export type ListingCategory = "product" | "service" | "course" | "affiliate" | "job" | "business";

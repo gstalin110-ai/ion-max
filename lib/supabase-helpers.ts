@@ -486,3 +486,102 @@ export async function getAllSurveys() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+// ========== FUNCIONES DE MÉTODOS DE PAGO DEL VENDEDOR ==========
+
+export async function getSellerPaymentMethods() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { data, error } = await supabase
+    .from("seller_payment_methods")
+    .select("*")
+    .eq("seller_id", user.id)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function addSellerPaymentMethod(paymentMethod: {
+  type: 'payment_link' | 'qr_code';
+  provider: string;
+  label: string;
+  value: string;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  // Verificar límite de 5 por tipo
+  const { count } = await supabase
+    .from("seller_payment_methods")
+    .select("*", { count: "exact", head: true })
+    .eq("seller_id", user.id)
+    .eq("type", paymentMethod.type)
+    .eq("is_active", true);
+
+  if (count && count >= 5) {
+    throw new Error(`Máximo 5 métodos de pago de tipo ${paymentMethod.type === 'payment_link' ? 'enlace' : 'QR'} permitidos`);
+  }
+
+  const { error, data } = await supabase
+    .from("seller_payment_methods")
+    .insert([{
+      seller_id: user.id,
+      type: paymentMethod.type,
+      provider: paymentMethod.provider,
+      label: paymentMethod.label,
+      value: paymentMethod.value,
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateSellerPaymentMethod(id: string, updates: {
+  label?: string;
+  value?: string;
+  is_active?: boolean;
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { error, data } = await supabase
+    .from("seller_payment_methods")
+    .update(updates)
+    .eq("id", id)
+    .eq("seller_id", user.id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteSellerPaymentMethod(id: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { error } = await supabase
+    .from("seller_payment_methods")
+    .delete()
+    .eq("id", id)
+    .eq("seller_id", user.id);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function getSellerPaymentMethodsBySellerId(sellerId: string) {
+  const { data, error } = await supabase
+    .from("seller_payment_methods")
+    .select("*")
+    .eq("seller_id", sellerId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
