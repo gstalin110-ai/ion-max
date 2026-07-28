@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { Home, ShoppingBag, Users, MessageSquare, User } from "lucide-react";
+import { Home, ShoppingBag, Users, MessageSquare, User, Plus } from "lucide-react";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -13,6 +13,7 @@ export function MobileBottomNav() {
   const navItems = [
     { href: "/", icon: Home, label: "Inicio" },
     { href: "/marketplace", icon: ShoppingBag, label: "Marketplace", badge: cartCount },
+    { href: "/publish", icon: Plus, label: "Publicar", isCenter: true },
     { href: "/comunidad", icon: Users, label: "Comunidad" },
     { href: "/messages", icon: MessageSquare, label: "Mensajes" },
     { href: "/profile", icon: User, label: "Perfil" },
@@ -29,12 +30,20 @@ export function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="relative flex flex-col items-center gap-1 px-3 py-2"
+              className={`relative flex flex-col items-center gap-1 px-3 py-2 ${
+                item.isCenter ? "-mt-6" : ""
+              }`}
             >
-              <div className="relative">
+              <div className={`relative ${
+                item.isCenter 
+                  ? "h-14 w-14 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg shadow-yellow-500/30" 
+                  : ""
+              }`}>
                 <Icon
                   className={`h-6 w-6 transition ${
-                    isActive ? "text-yellow-400" : "text-zinc-500"
+                    item.isCenter 
+                      ? "text-black h-7 w-7" 
+                      : isActive ? "text-yellow-400" : "text-zinc-500"
                   }`}
                 />
                 {item.badge !== undefined && item.badge > 0 && (
@@ -45,7 +54,9 @@ export function MobileBottomNav() {
               </div>
               <span
                 className={`text-[10px] font-medium transition ${
-                  isActive ? "text-yellow-400" : "text-zinc-500"
+                  item.isCenter 
+                    ? "text-black font-bold" 
+                    : isActive ? "text-yellow-400" : "text-zinc-500"
                 }`}
               >
                 {item.label}
