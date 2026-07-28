@@ -5,6 +5,7 @@ import { createListing } from "@/lib/supabase-helpers";
 import { ListingFormData } from "@/lib/types";
 import { useAuth } from "@/src/contexts/auth-context";
 import { supabase } from "@/src/lib/supabase/client";
+import { generateOptimizedDescription } from "@/src/services/ai-marketing-service";
 import toast from "react-hot-toast";
 import { Sparkles, Upload, X, Image as ImageIcon } from "lucide-react";
 
@@ -76,37 +77,31 @@ export function PublishPage() {
     setIsOptimizing(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          prompt: `Optimiza el siguiente listing para IÓN MAX. Devuelve SOLO un JSON con este formato: {"title": "título optimizado", "description": "descripción persuasiva", "tags": "tag1, tag2, tag3"}. Tipo: ${selectedType}. Título actual: ${formData.title}. Descripción actual: ${formData.description}.`,
-          userId: user?.id,
-        }),
+      const categoryMap: Record<string, string> = {
+        "Producto Físico": "product",
+        "Servicio": "service", 
+        "Curso": "course",
+        "Enlace Afiliado": "affiliate",
+      };
+
+      const optimized = await generateOptimizedDescription({
+        title: formData.title,
+        description: formData.description,
+        category: categoryMap[selectedType],
+        price: parseFloat(formData.price) || 0,
+        location: formData.location,
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.text) {
-        try {
-          const optimized = JSON.parse(data.text);
-          setFormData((prev) => ({
-            ...prev,
-            title: optimized.title || prev.title,
-            description: optimized.description || prev.description,
-            tags: optimized.tags || prev.tags,
-          }));
-          toast.success("Contenido optimizado con IA");
-        } catch (parseError) {
-          toast.error("Error al procesar la respuesta de IA");
-        }
-      } else {
-        toast.error(data.error || "Error al optimizar con IA");
-      }
+      setFormData((prev) => ({
+        ...prev,
+        title: optimized.title || prev.title,
+        description: optimized.description || prev.description,
+        tags: optimized.tags || prev.tags,
+      }));
+      
+      toast.success("Contenido optimizado con IA para IÓN MAX");
     } catch (error) {
-      toast.error("Error de conexión con el servicio de IA");
+      toast.error(error instanceof Error ? error.message : "Error al optimizar con IA");
     } finally {
       setIsOptimizing(false);
     }
