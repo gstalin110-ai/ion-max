@@ -141,11 +141,11 @@ export function InvoicesSection() {
                     <div className="flex items-center gap-4 text-xs text-zinc-400">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        {new Date(invoice.invoice_date).toLocaleDateString('es-EC')}
+                        {new Date(invoice.invoice_date).toLocaleString('es-EC')}
                       </div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />
-                        ${invoice.total_amount.toFixed(2)}
+                        ${invoice.amount.toFixed(2)}
                       </div>
                     </div>
                   </div>

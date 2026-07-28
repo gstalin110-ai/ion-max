@@ -7,13 +7,15 @@
 import { Invoice } from "@/lib/types";
 
 /**
- * Generar HTML de factura con diseño IÓN MAX
+ * Generar HTML de factura simple con diseño IÓN MAX
  */
 export function generateInvoiceHTML(invoice: Invoice, orderDetails?: any): string {
-  const date = new Date(invoice.invoice_date).toLocaleDateString('es-EC', {
+  const date = new Date(invoice.invoice_date).toLocaleString('es-EC', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   return `
@@ -164,43 +166,6 @@ export function generateInvoiceHTML(invoice: Invoice, orderDetails?: any): strin
       margin-bottom: 0;
     }
     
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    
-    .items-table th {
-      font-size: 11px;
-      font-weight: 700;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-align: left;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .items-table th:last-child {
-      text-align: right;
-    }
-    
-    .items-table td {
-      font-size: 14px;
-      color: #ffffff;
-      padding: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .items-table td:last-child {
-      text-align: right;
-      font-weight: 600;
-    }
-    
-    .items-table tr:last-child td {
-      border-bottom: none;
-    }
-    
     .totals {
       margin-top: 24px;
       background: rgba(250, 204, 21, 0.05);
@@ -213,33 +178,15 @@ export function generateInvoiceHTML(invoice: Invoice, orderDetails?: any): strin
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-    }
-    
-    .total-row:last-child {
-      margin-bottom: 0;
-      padding-top: 12px;
-      border-top: 1px solid rgba(250, 204, 21, 0.2);
     }
     
     .total-label {
-      font-size: 13px;
-      color: #9ca3af;
-    }
-    
-    .total-label.grand {
       font-size: 14px;
       font-weight: 700;
       color: #facc15;
     }
     
     .total-value {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-    }
-    
-    .total-value.grand {
       font-size: 24px;
       font-weight: 800;
       color: #facc15;
@@ -307,77 +254,43 @@ export function generateInvoiceHTML(invoice: Invoice, orderDetails?: any): strin
     
     <div class="content">
       <div class="section">
-        <div class="section-title">Información de la Factura</div>
+        <div class="section-title">Información de la Transacción</div>
         <div class="parties">
           <div class="party">
             <div class="party-label">Vendedor</div>
-            <div class="party-name">${invoice.seller_razon_social || 'No especificado'}</div>
-            <div class="party-detail">RUC: ${invoice.seller_ruc || 'No especificado'}</div>
-            <div class="party-detail">${invoice.seller_address || 'No especificado'}</div>
-            <div class="party-detail">${invoice.seller_phone || ''}</div>
+            <div class="party-name">${invoice.seller_name}</div>
+            <div class="party-detail">ID: ${invoice.seller_id_display}</div>
             <div class="party-detail">${invoice.seller_email || ''}</div>
           </div>
           <div class="party">
             <div class="party-label">Comprador</div>
-            <div class="party-name">${invoice.buyer_razon_social || 'No especificado'}</div>
-            <div class="party-detail">RUC: ${invoice.buyer_ruc || 'No especificado'}</div>
-            <div class="party-detail">${invoice.buyer_address || 'No especificado'}</div>
-            <div class="party-detail">${invoice.buyer_phone || ''}</div>
+            <div class="party-name">${invoice.buyer_name}</div>
+            <div class="party-detail">ID: ${invoice.buyer_id_display}</div>
             <div class="party-detail">${invoice.buyer_email || ''}</div>
           </div>
         </div>
       </div>
       
       <div class="section">
-        <div class="section-title">Fecha de Emisión</div>
+        <div class="section-title">Fecha y Hora Exacta</div>
         <div style="font-size: 16px; font-weight: 600; color: #ffffff;">
           ${date}
         </div>
       </div>
       
       <div class="section">
-        <div class="section-title">Desglose de Pagos</div>
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th>Concepto</th>
-              <th>Detalle</th>
-              <th>Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Subtotal</td>
-              <td>Monto antes de impuestos</td>
-              <td>$${invoice.subtotal.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td>IVA (12%)</td>
-              <td>Impuesto al Valor Agregado</td>
-              <td>$${invoice.tax_amount.toFixed(2)}</td>
-            </tr>
-          </tbody>
-        </table>
-        
+        <div class="section-title">Monto de la Transacción</div>
         <div class="totals">
           <div class="total-row">
-            <div class="total-label">Subtotal</div>
-            <div class="total-value">$${invoice.subtotal.toFixed(2)}</div>
-          </div>
-          <div class="total-row">
-            <div class="total-label">IVA (12%)</div>
-            <div class="total-value">$${invoice.tax_amount.toFixed(2)}</div>
-          </div>
-          <div class="total-row">
-            <div class="total-label grand">TOTAL</div>
-            <div class="total-value grand">$${invoice.total_amount.toFixed(2)}</div>
+            <div class="total-label">TOTAL</div>
+            <div class="total-value">$${invoice.amount.toFixed(2)} USD</div>
           </div>
         </div>
       </div>
       
       <div class="footer">
-        <div class="footer-text">Factura electrónica generada por IÓN MAX MARKET SOCIAL</div>
-        <div class="footer-text">Esta factura es válida para fines fiscales en Ecuador</div>
+        <div class="footer-text">Factura generada por IÓN MAX MARKET SOCIAL</div>
+        <div class="footer-text">Transacción registrada en Ecuador</div>
         <div class="footer-brand">IÓN MAX © ${new Date().getFullYear()}</div>
       </div>
     </div>

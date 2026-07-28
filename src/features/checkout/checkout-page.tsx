@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getSellerPaymentMethodsBySellerId } from "@/lib/supabase-helpers";
+import { getSellerPaymentMethodsBySellerId, createSimpleOrder, createInvoice } from "@/lib/supabase-helpers";
 import { SellerPaymentMethod } from "@/lib/types";
 import { useAuth } from "@/src/contexts/auth-context";
 import { useCart } from "@/lib/cart-context";
+import { supabase } from "@/src/lib/supabase/client";
 import toast from "react-hot-toast";
 import { CreditCard, QrCode, ArrowLeft, CheckCircle, ExternalLink, Copy } from "lucide-react";
 
@@ -26,15 +27,14 @@ export function CheckoutPage({ listingId, sellerId, sellerName, price, title }: 
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // Datos de facturación del comprador
-  const [buyerRuc, setBuyerRuc] = useState("");
-  const [buyerRazonSocial, setBuyerRazonSocial] = useState("");
-  const [buyerAddress, setBuyerAddress] = useState("");
+  // Datos del comprador
+  const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerEmail, setBuyerEmail] = useState(user?.email || "");
 
   useEffect(() => {
     loadPaymentMethods();
+    loadUserProfile();
   }, [sellerId]);
 
   const loadPaymentMethods = async () => {
@@ -45,6 +45,23 @@ export function CheckoutPage({ listingId, sellerId, sellerName, price, title }: 
       toast.error("Error al cargar métodos de pago");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadUserProfile = async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user?.id)
+        .single();
+      
+      if (data) {
+        setBuyerName(data.full_name || "");
+        setBuyerPhone(data.phone || "");
+      }
+    } catch (error) {
+      console.error("Error al cargar perfil:", error);
     }
   };
 
@@ -59,24 +76,55 @@ export function CheckoutPage({ listingId, sellerId, sellerName, price, title }: 
       return;
     }
 
-    if (!buyerRazonSocial || !buyerPhone) {
-      toast.error("Completa los datos de facturación");
+    if (!buyerName || !buyerPhone) {
+      toast.error("Completa tus datos");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Debes estar autenticado");
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Aquí iría la lógica para crear la orden y la factura
-      // Por ahora, simulamos el proceso
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // 1. Crear orden simple en BD
+      const order = await createSimpleOrder({
+        seller_id: sellerId,
+        total_amount: price,
+        currency: 'USD',
+        payment_method: selectedMethod.provider,
+        payment_status: 'completed',
+      });
+
+      // 2. Obtener datos del vendedor
+      const { data: sellerProfile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", sellerId)
+        .single();
+
+      // 3. Generar factura simple
+      const invoice = await createInvoice({
+        order_id: order.id,
+        seller_id: sellerId,
+        buyer_id: user.id,
+        seller_name: sellerProfile?.full_name || sellerName,
+        seller_id_display: sellerId,
+        seller_email: sellerProfile?.email,
+        buyer_name: buyerName,
+        buyer_id_display: user.id,
+        buyer_email: buyerEmail,
+        amount: price,
+      });
+
       toast.success("¡Pago procesado exitosamente!");
       clearCart();
-      router.push("/orders");
+      router.push(`/orders/${order.id}`);
     } catch (error) {
-      toast.error("Error al procesar el pago");
+      console.error("Error al procesar pago:", error);
+      toast.error(error instanceof Error ? error.message : "Error al procesar el pago");
     } finally {
       setIsProcessing(false);
     }
@@ -125,52 +173,24 @@ export function CheckoutPage({ listingId, sellerId, sellerName, price, title }: 
               </div>
               <div className="border-t border-white/10 pt-4">
                 <div className="flex justify-between">
-                  <p className="text-sm text-zinc-400">Subtotal</p>
-                  <p className="font-medium text-white">${price.toFixed(2)}</p>
-                </div>
-                <div className="flex justify-between mt-2">
-                  <p className="text-sm text-zinc-400">IVA (12%)</p>
-                  <p className="font-medium text-white">${(price * 0.12).toFixed(2)}</p>
-                </div>
-                <div className="flex justify-between mt-2 pt-2 border-t border-white/10">
                   <p className="font-bold text-white">Total</p>
-                  <p className="font-bold text-yellow-400 text-lg">${(price * 1.12).toFixed(2)}</p>
+                  <p className="font-bold text-yellow-400 text-lg">${price.toFixed(2)}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Datos de Facturación */}
+          {/* Tus Datos */}
           <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6">
-            <h2 className="mb-4 text-lg font-bold text-white">Datos de Facturación</h2>
+            <h2 className="mb-4 text-lg font-bold text-white">Tus Datos</h2>
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-white">RUC (Opcional)</label>
+                <label className="mb-2 block text-sm font-medium text-white">Nombre Completo *</label>
                 <input
                   type="text"
-                  placeholder="9999999999999"
-                  value={buyerRuc}
-                  onChange={(e) => setBuyerRuc(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white">Razón Social / Nombre *</label>
-                <input
-                  type="text"
-                  placeholder="Tu nombre o razón social"
-                  value={buyerRazonSocial}
-                  onChange={(e) => setBuyerRazonSocial(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-white">Dirección</label>
-                <input
-                  type="text"
-                  placeholder="Tu dirección"
-                  value={buyerAddress}
-                  onChange={(e) => setBuyerAddress(e.target.value)}
+                  placeholder="Tu nombre completo"
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400"
                 />
               </div>
@@ -288,7 +308,7 @@ export function CheckoutPage({ listingId, sellerId, sellerName, price, title }: 
             disabled={!selectedMethod || isProcessing}
             className="w-full rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 px-6 py-4 text-sm font-black text-black transition hover:shadow-[0_0_30px_rgba(250,204,21,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? "Procesando..." : `Pagar $${(price * 1.12).toFixed(2)}`}
+            {isProcessing ? "Procesando..." : `Pagar $${price.toFixed(2)}`}
           </button>
           <p className="mt-3 text-center text-xs text-zinc-500">
             Al confirmar, aceptas los términos y condiciones de IÓN MAX

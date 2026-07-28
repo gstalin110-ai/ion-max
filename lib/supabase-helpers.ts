@@ -199,6 +199,35 @@ export async function getCurrentUser() {
 
 // ========== FUNCIONES DE ÓRDENES Y PAGOS ==========
 
+// Función simplificada para crear orden simple (IÓN MAX)
+export async function createSimpleOrder(orderData: {
+  seller_id: string;
+  total_amount: number;
+  currency: string;
+  payment_method: string;
+  payment_status: string;
+}): Promise<any> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { error, data } = await supabase
+    .from("orders")
+    .insert([{
+      buyer_id: user.id,
+      seller_id: orderData.seller_id,
+      status: "completed",
+      total_amount: orderData.total_amount,
+      currency: orderData.currency,
+      payment_method: orderData.payment_method,
+      payment_status: orderData.payment_status,
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function createOrder(
   buyerId: string,
   sellerId: string,
@@ -444,19 +473,21 @@ export async function getAllOrdersAdmin() {
 }
 
 export async function getSystemStats() {
-  const [usersCount, listingsCount, ordersCount, revenue] = await Promise.all([
+  const [usersCount, listingsCount, ordersCount, ticketsCount, revenue] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("listings").select("id", { count: "exact", head: true }),
     supabase.from("orders").select("id", { count: "exact", head: true }),
-    supabase.from("payments").select("amount").eq("payment_status", "completed")
+    supabase.from("support_tickets").select("id", { count: "exact", head: true }),
+    supabase.from("orders").select("total_amount").eq("payment_status", "completed")
   ]);
 
-  const totalRevenue = revenue.data?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
+  const totalRevenue = revenue.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
   return {
     users: usersCount.count || 0,
     listings: listingsCount.count || 0,
     orders: ordersCount.count || 0,
+    tickets: ticketsCount.count || 0,
     revenue: totalRevenue
   };
 }
@@ -586,23 +617,19 @@ export async function getSellerPaymentMethodsBySellerId(sellerId: string) {
   return data;
 }
 
-// ========== FUNCIONES DE FACTURACIÓN ELECTRÓNICA ==========
+// ========== FUNCIONES DE FACTURACIÓN ELECTRÓNICA (SIMPLE) ==========
 
 export async function createInvoice(invoiceData: {
   order_id: string;
   seller_id: string;
   buyer_id: string;
-  subtotal: number;
-  seller_ruc?: string;
-  seller_razon_social?: string;
-  seller_address?: string;
-  seller_phone?: string;
+  seller_name: string;
+  seller_id_display: string;
   seller_email?: string;
-  buyer_ruc?: string;
-  buyer_razon_social?: string;
-  buyer_address?: string;
-  buyer_phone?: string;
+  buyer_name: string;
+  buyer_id_display: string;
   buyer_email?: string;
+  amount: number;
 }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuario no autenticado");
@@ -615,10 +642,6 @@ export async function createInvoice(invoiceData: {
   const random = Math.floor(Math.random() * 90000) + 10000;
   const invoice_number = `ION-${year}${month}${day}-${random}`;
 
-  // Calcular IVA (12% Ecuador)
-  const tax_amount = invoiceData.subtotal * 0.12;
-  const total_amount = invoiceData.subtotal + tax_amount;
-
   const { error, data } = await supabase
     .from("invoices")
     .insert([{
@@ -626,19 +649,13 @@ export async function createInvoice(invoiceData: {
       order_id: invoiceData.order_id,
       seller_id: invoiceData.seller_id,
       buyer_id: invoiceData.buyer_id,
-      subtotal: invoiceData.subtotal,
-      tax_amount,
-      total_amount,
+      amount: invoiceData.amount,
       currency: 'USD',
-      seller_ruc: invoiceData.seller_ruc,
-      seller_razon_social: invoiceData.seller_razon_social,
-      seller_address: invoiceData.seller_address,
-      seller_phone: invoiceData.seller_phone,
+      seller_name: invoiceData.seller_name,
+      seller_id_display: invoiceData.seller_id_display,
       seller_email: invoiceData.seller_email,
-      buyer_ruc: invoiceData.buyer_ruc,
-      buyer_razon_social: invoiceData.buyer_razon_social,
-      buyer_address: invoiceData.buyer_address,
-      buyer_phone: invoiceData.buyer_phone,
+      buyer_name: invoiceData.buyer_name,
+      buyer_id_display: invoiceData.buyer_id_display,
       buyer_email: invoiceData.buyer_email,
       status: 'pending',
       owner_reference: true,
@@ -683,12 +700,11 @@ export async function getInvoicesByBuyer(buyerId: string) {
   return data || [];
 }
 
-export async function updateInvoiceUrls(invoiceId: string, pdfUrl: string, xmlUrl?: string) {
+export async function updateInvoiceUrls(invoiceId: string, pdfUrl: string) {
   const { error } = await supabase
     .from("invoices")
     .update({
       pdf_url: pdfUrl,
-      xml_url: xmlUrl,
       status: 'generated',
     })
     .eq("id", invoiceId);
@@ -824,4 +840,27 @@ export async function updateTicketOwnerNotes(ticketId: string, notes: string) {
     .eq("id", ticketId);
 
   if (error) throw new Error(error.message);
+}
+
+// ========== FUNCIONES DEL DUEÑO PARA GESTIÓN DE TICKETS ==========
+
+export async function getAllTicketsForOwner() {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("*, profiles:buyer_id(full_name, email)")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function getAllTicketsByStatus(status: string) {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("*, profiles:buyer_id(full_name, email)")
+    .eq("status", status)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
 }

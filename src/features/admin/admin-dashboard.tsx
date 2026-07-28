@@ -16,13 +16,14 @@ import {
   getRecentActivity,
   getAllSurveys
 } from "@/lib/supabase-helpers";
+import { TicketsManagementSection } from "./tickets-management-section";
 
 export function AdminDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ users: 0, listings: 0, orders: 0, revenue: 0 });
+  const [stats, setStats] = useState({ users: 0, listings: 0, orders: 0, tickets: 0, revenue: 0 });
   const [recentActivity, setRecentActivity] = useState({ listings: [] as any[], orders: [] as any[], users: [] as any[] });
   const [users, setUsers] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
@@ -115,7 +116,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
           <p className="text-sm text-zinc-400">Usuarios Totales</p>
           <p className="mt-2 text-3xl font-black text-white">{stats.users}</p>
@@ -127,6 +128,10 @@ export function AdminDashboard() {
         <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
           <p className="text-sm text-zinc-400">Órdenes Totales</p>
           <p className="mt-2 text-3xl font-black text-white">{stats.orders}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
+          <p className="text-sm text-zinc-400">Tickets Abiertos</p>
+          <p className="mt-2 text-3xl font-black text-yellow-400">{stats.tickets}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
           <p className="text-sm text-zinc-400">Ingresos Generados</p>
@@ -185,6 +190,16 @@ export function AdminDashboard() {
           }`}
         >
           Encuestas
+        </button>
+        <button
+          onClick={() => setActiveTab("tickets")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            activeTab === "tickets"
+              ? "bg-yellow-400 text-black"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          Tickets
         </button>
       </div>
 
@@ -390,6 +405,12 @@ export function AdminDashboard() {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === "tickets" && (
+        <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
+          <TicketsManagementSection />
         </div>
       )}
     </div>

@@ -45,40 +45,33 @@ CREATE POLICY "Vendedores pueden eliminar sus métodos de pago"
     ON public.seller_payment_methods FOR DELETE 
     USING (auth.uid() = seller_id);
 
--- 5. Crear tabla para facturas electrónicas
+-- 5. Crear tabla para facturas electrónicas (SIMPLE - Sin IVA)
 CREATE TABLE IF NOT EXISTS public.invoices (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     order_id UUID NOT NULL,
     seller_id UUID REFERENCES auth.users(id) NOT NULL,
     buyer_id UUID REFERENCES auth.users(id) NOT NULL,
-    invoice_number TEXT UNIQUE NOT NULL, -- Número de factura del SRI
-    invoice_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    subtotal DECIMAL(10,2) NOT NULL,
-    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0, -- IVA 12% Ecuador
-    total_amount DECIMAL(10,2) NOT NULL,
+    invoice_number TEXT UNIQUE NOT NULL, -- ID único de factura
+    invoice_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- Hora exacta
+    amount DECIMAL(10,2) NOT NULL, -- Monto total (sin IVA)
     currency TEXT NOT NULL DEFAULT 'USD',
     
-    -- Datos del vendedor para facturación
-    seller_ruc TEXT,
-    seller_razon_social TEXT,
-    seller_address TEXT,
-    seller_phone TEXT,
+    -- Datos del vendedor
+    seller_name TEXT NOT NULL,
+    seller_id_display TEXT NOT NULL, -- ID único de cuenta del vendedor
     seller_email TEXT,
     
-    -- Datos del comprador para facturación
-    buyer_ruc TEXT,
-    buyer_razon_social TEXT,
-    buyer_address TEXT,
-    buyer_phone TEXT,
+    -- Datos del comprador
+    buyer_name TEXT NOT NULL,
+    buyer_id_display TEXT NOT NULL, -- ID único de cuenta del comprador
     buyer_email TEXT,
     
     -- Datos de la factura
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'generated', 'sent', 'cancelled')),
     pdf_url TEXT, -- URL del PDF en Supabase Storage
-    xml_url TEXT, -- URL del XML en Supabase Storage (si aplica)
     
     -- Referencia para el dueño
-    owner_reference BOOLEAN DEFAULT true, -- Si true, el dueño también tiene copia
+    owner_reference BOOLEAN DEFAULT true, -- Copia para el dueño
     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -89,6 +82,7 @@ CREATE INDEX IF NOT EXISTS idx_invoices_order_id ON public.invoices(order_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_seller_id ON public.invoices(seller_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_buyer_id ON public.invoices(buyer_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_invoice_number ON public.invoices(invoice_number);
+CREATE INDEX IF NOT EXISTS idx_invoices_date ON public.invoices(invoice_date);
 
 -- 7. Habilitar RLS para facturas
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
