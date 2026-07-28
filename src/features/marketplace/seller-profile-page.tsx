@@ -38,9 +38,9 @@ export function SellerProfilePage({ sellerId }: SellerProfilePageProps) {
   });
 
   // Filtrar listings del vendedor (en producción esto vendría de Supabase)
-  const sellerListings = sellerId 
-    ? listings.filter(l => l.user_id === sellerId)
-    : listings.filter(l => l.user_id === user?.id);
+  const sellerListings = sellerId
+    ? listings.filter(l => l.seller_id === sellerId)
+    : listings.filter(l => l.seller_id === user?.id);
 
   // Estadísticas simuladas del vendedor
   const sellerStats = {

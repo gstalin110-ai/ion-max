@@ -81,13 +81,23 @@ export function ComunidadPage() {
 
   const toggleLike = async (postId: string) => {
     if (!user) return;
+    // Optimistic update del corazón
+    setPosts(prev =>
+      prev.map(p =>
+        p.id === postId
+          ? { ...p, likes_count: (p.likes_count ?? 0) + 1 }
+          : p
+      )
+    );
     try {
-      const result = await togglePostLike(postId, user.id);
-      // Recargar posts para actualizar contadores
+      await togglePostLike(postId, user.id);
       const postsData = await getCommunityPosts();
       setPosts(postsData);
     } catch (error) {
       console.error('Error al dar like:', error);
+      // Revertir optimistic update si falla
+      const postsData = await getCommunityPosts();
+      setPosts(postsData);
     }
   };
 
@@ -124,7 +134,7 @@ export function ComunidadPage() {
     }
   };
 
-  const toggleFollow = (memberId: string) => {
+  const toggleFollow = async (memberId: string) => {
     setFollowing(prev => {
       const updated = new Set(prev);
       if (updated.has(memberId)) {
@@ -134,6 +144,15 @@ export function ComunidadPage() {
       }
       return updated;
     });
+    // Persistir en Supabase si no está siguiendo aún
+    if (!following.has(memberId) && user) {
+      try {
+        const { sendFriendRequest } = await import("@/src/services/social");
+        await sendFriendRequest(user.id, memberId);
+      } catch {
+        // Ignorar si ya existe la solicitud (UNIQUE constraint)
+      }
+    }
   };
 
   const openChat = async (member: CommunityMember) => {
@@ -459,7 +478,7 @@ export function ComunidadPage() {
               Productos
             </button>
             <button
-              onClick={() => setInterval(() => setFilter("posts"), 5000)}
+              onClick={() => setFilter("posts")}
               className={`rounded-full border px-4 py-2 text-sm transition ${
                 filter === "posts"
                   ? "border-white bg-white text-black"
@@ -551,33 +570,30 @@ export function ComunidadPage() {
                       </div>
                       <p className="text-sm leading-relaxed text-zinc-300">{item.data.content}</p>
                       
-                      {/* Imágenes del post */}
-                      {(item.data.image_url || (item.data.images && item.data.images.length > 0)) && (
-                        <div className="mt-4 grid grid-cols-2 gap-2">
-                          {item.data.image_url && (
-                            <div className="relative h-48 w-full overflow-hidden rounded-xl">
-                              <Image
-                                src={item.data.image_url}
-                                alt="Post image"
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                          )}
-                          {item.data.images && item.data.images.map((img, idx) => (
-                            <div key={idx} className="relative h-48 w-full overflow-hidden rounded-xl">
-                              <Image
-                                src={img}
-                                alt={`Post image ${idx + 1}`}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {/* Imágenes del post — sin duplicar image_url si ya está en images[] */}
+                      {(() => {
+                        const allImages = item.data.images && item.data.images.length > 0
+                          ? item.data.images
+                          : item.data.image_url
+                          ? [item.data.image_url]
+                          : [];
+                        if (allImages.length === 0) return null;
+                        return (
+                          <div className={`mt-4 grid gap-2 ${allImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                            {allImages.map((img, idx) => (
+                              <div key={idx} className={`relative overflow-hidden rounded-xl ${allImages.length === 1 ? 'h-64' : 'h-40'}`}>
+                                <Image
+                                  src={img}
+                                  alt={`Imagen del post ${idx + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                       
                       {/* Likes y Comentarios */}
                       <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500 border-t border-white/10 pt-4">
