@@ -6,10 +6,11 @@ import { supabase } from "@/src/lib/supabase/client";
 import toast from "react-hot-toast";
 import { PaymentMethodsSection } from "./payment-methods-section";
 import { InvoicesSection } from "./invoices-section";
+import { SupportTicketsSection } from "./support-tickets-section";
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "notifications" | "ai" | "payments" | "invoices">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "notifications" | "ai" | "payments" | "invoices" | "tickets">("profile");
   const [isSaving, setIsSaving] = useState(false);
 
   // Profile form state
@@ -213,6 +214,16 @@ export function SettingsPage() {
           }`}
         >
           Facturas
+        </button>
+        <button
+          onClick={() => setActiveTab("tickets")}
+          className={`px-4 py-2 rounded-xl text-sm font-black transition-all whitespace-nowrap ${
+            activeTab === "tickets"
+              ? "bg-white text-black"
+              : "bg-white/5 text-zinc-400 hover:bg-white/10"
+          }`}
+        >
+          Tickets
         </button>
       </div>
 
@@ -446,6 +457,13 @@ export function SettingsPage() {
       {activeTab === "invoices" && (
         <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
           <InvoicesSection />
+        </div>
+      )}
+
+      {/* Tickets Tab */}
+      {activeTab === "tickets" && (
+        <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
+          <SupportTicketsSection />
         </div>
       )}
     </div>

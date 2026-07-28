@@ -1,5 +1,39 @@
 // Tipos para todo el ecosistema de IÓN MAX
 
+// ============ TICKETS Y QUEJAS ============
+export type TicketType = 'complaint' | 'issue' | 'suggestion' | 'other';
+export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  ticket_number: string;
+  type: TicketType;
+  category: string;
+  subject: string;
+  description: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  priority: TicketPriority;
+  status: TicketStatus;
+  owner_notes?: string;
+  owner_assigned_to?: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string;
+}
+
+export interface TicketMessage {
+  id: string;
+  ticket_id: string;
+  sender_id: string;
+  is_owner: boolean;
+  message: string;
+  attachments: string[];
+  created_at: string;
+}
+
 // ============ MÉTODOS DE PAGO DEL VENDEDOR ============
 export type PaymentMethodType = 'payment_link' | 'qr_code';
 

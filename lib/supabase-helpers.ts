@@ -704,3 +704,124 @@ export async function markInvoiceAsSent(invoiceId: string) {
 
   if (error) throw new Error(error.message);
 }
+
+// ========== FUNCIONES DE TICKETS Y QUEJAS ==========
+
+export async function createSupportTicket(ticketData: {
+  type: 'complaint' | 'issue' | 'suggestion' | 'other';
+  category: string;
+  subject: string;
+  description: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  // Generar número de ticket único
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 90000) + 10000;
+  const ticket_number = `TKT-${year}${month}${day}-${random}`;
+
+  const { error, data } = await supabase
+    .from("support_tickets")
+    .insert([{
+      user_id: user.id,
+      ticket_number,
+      type: ticketData.type,
+      category: ticketData.category,
+      subject: ticketData.subject,
+      description: ticketData.description,
+      related_entity_type: ticketData.related_entity_type,
+      related_entity_id: ticketData.related_entity_id,
+      priority: ticketData.priority || 'medium',
+      status: 'open',
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getUserTickets() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function getTicketById(ticketId: string) {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select("*")
+    .eq("id", ticketId)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getTicketMessages(ticketId: string) {
+  const { data, error } = await supabase
+    .from("ticket_messages")
+    .select("*")
+    .eq("ticket_id", ticketId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function addTicketMessage(ticketId: string, message: string, isOwner: boolean = false) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuario no autenticado");
+
+  const { error, data } = await supabase
+    .from("ticket_messages")
+    .insert([{
+      ticket_id: ticketId,
+      sender_id: user.id,
+      is_owner: isOwner,
+      message,
+      attachments: [],
+    }])
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateTicketStatus(ticketId: string, status: 'open' | 'in_progress' | 'resolved' | 'closed') {
+  const { error } = await supabase
+    .from("support_tickets")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+      ...(status === 'resolved' || status === 'closed' ? { resolved_at: new Date().toISOString() } : {}),
+    })
+    .eq("id", ticketId);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function updateTicketOwnerNotes(ticketId: string, notes: string) {
+  const { error } = await supabase
+    .from("support_tickets")
+    .update({ owner_notes: notes })
+    .eq("id", ticketId);
+
+  if (error) throw new Error(error.message);
+}
