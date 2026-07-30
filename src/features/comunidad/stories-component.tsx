@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { X, Play, Pause, ChevronLeft, ChevronRight, ShoppingCart, Plus } from "lucide-react";
+import { X, Play, Pause, ChevronLeft, ChevronRight, ShoppingCart, Plus, Heart, MessageCircle, Flame, Bookmark, Share2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getListings } from "@/lib/supabase-helpers";
 
@@ -21,6 +21,8 @@ export function StoriesComponent() {
   const [activeStory, setActiveStory] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [likedStories, setLikedStories] = useState<Set<string>>(new Set());
+  const [bookmarkedStories, setBookmarkedStories] = useState<Set<string>>(new Set());
 
   const { data: listings = [] } = useQuery({
     queryKey: ["listings"],
@@ -73,8 +75,32 @@ export function StoriesComponent() {
     }
   };
 
+  const toggleLike = (storyId: string) => {
+    setLikedStories(prev => {
+      const updated = new Set(prev);
+      if (updated.has(storyId)) {
+        updated.delete(storyId);
+      } else {
+        updated.add(storyId);
+      }
+      return updated;
+    });
+  };
+
+  const toggleBookmark = (storyId: string) => {
+    setBookmarkedStories(prev => {
+      const updated = new Set(prev);
+      if (updated.has(storyId)) {
+        updated.delete(storyId);
+      } else {
+        updated.add(storyId);
+      }
+      return updated;
+    });
+  };
+
   // Simular progreso de la historia
-  useState(() => {
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (activeStory !== null && isPlaying) {
       interval = setInterval(() => {
@@ -88,7 +114,7 @@ export function StoriesComponent() {
       }, 50);
     }
     return () => clearInterval(interval);
-  });
+  }, [activeStory, isPlaying]);
 
   return (
     <>
@@ -195,21 +221,64 @@ export function StoriesComponent() {
                   unoptimized
                 />
 
-                {/* Story Info */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6">
+                {/* Story Info Premium */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
-                    <div>
-                      <p className="font-black text-white">Vendedor Premium</p>
-                      <p className="text-xs text-zinc-400">Hace 2 horas</p>
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
+                      {stories[activeStory].title.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-black text-white text-lg">Vendedor Premium</p>
+                        <div className="flex items-center gap-1 rounded-full bg-yellow-400/10 px-2 py-0.5 text-[10px] font-black text-yellow-400">
+                          <Flame className="h-3 w-3" />
+                          <span>Top</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-400 flex items-center gap-2">
+                        Hace 2 horas · 1.2K vistas
+                      </p>
                     </div>
                   </div>
-                  <h3 className="text-xl font-black text-white mb-2">{stories[activeStory].title}</h3>
+                  
+                  <h3 className="text-2xl font-black text-white mb-4">{stories[activeStory].title}</h3>
+                  
+                  <div className="flex items-center gap-3 mb-4">
+                    <button
+                      onClick={() => toggleLike(stories[activeStory].id)}
+                      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition ${
+                        likedStories.has(stories[activeStory].id)
+                          ? "bg-red-500 text-white"
+                          : "bg-white/10 text-white hover:bg-white/20"
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${likedStories.has(stories[activeStory].id) ? "fill-white" : ""}`} />
+                      {Math.floor(Math.random() * 500) + 100}
+                    </button>
+                    <button className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/20 transition">
+                      <MessageCircle className="h-4 w-4" />
+                      {Math.floor(Math.random() * 50) + 10}
+                    </button>
+                    <button
+                      onClick={() => toggleBookmark(stories[activeStory].id)}
+                      className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black transition ${
+                        bookmarkedStories.has(stories[activeStory].id)
+                          ? "bg-yellow-400 text-black"
+                          : "bg-white/10 text-white hover:bg-white/20"
+                      }`}
+                    >
+                      <Bookmark className="h-4 w-4" />
+                    </button>
+                    <button className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-black text-white hover:bg-white/20 transition">
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
                   {stories[activeStory].type === "product" && (
                     <Link
                       href={stories[activeStory].link || "#"}
                       onClick={closeStory}
-                      className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-black text-black hover:bg-zinc-200 transition"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-500 px-8 py-3 text-sm font-black text-black hover:shadow-[0_0_30px_rgba(250,204,21,0.5)] transition"
                     >
                       <ShoppingCart className="h-4 w-4" />
                       Ver producto
@@ -219,8 +288,9 @@ export function StoriesComponent() {
                     <Link
                       href={stories[activeStory].link || "#"}
                       onClick={closeStory}
-                      className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-6 py-3 text-sm font-black text-black hover:bg-yellow-300 transition"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-red-400 to-red-500 px-8 py-3 text-sm font-black text-white hover:shadow-[0_0_30px_rgba(248,113,113,0.5)] transition"
                     >
+                      <Flame className="h-4 w-4" />
                       Ver ofertas
                     </Link>
                   )}
