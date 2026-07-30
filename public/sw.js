@@ -19,7 +19,9 @@ self.addEventListener('fetch', (event) => {
   // No cachear API calls ni rutas dinámicas
   if (event.request.url.includes('/api/') || 
       event.request.url.includes('/auth/') ||
-      event.request.url.includes('supabase')) {
+      event.request.url.includes('/rest/v1/') ||
+      event.request.url.includes('supabase') ||
+      event.request.url.includes('vercel.com/sso-api')) {
     event.respondWith(fetch(event.request));
     return;
   }
