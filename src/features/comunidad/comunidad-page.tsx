@@ -24,6 +24,7 @@ import {
   Eye,
   Bookmark,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import {
   createCommunityPost,
