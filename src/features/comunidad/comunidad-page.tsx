@@ -53,6 +53,10 @@ export function ComunidadPage() {
   const [newPost, setNewPost] = useState("");
   const [postImages, setPostImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [showAiModal, setShowAiModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState("");
@@ -241,27 +245,104 @@ export function ComunidadPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     
-    const validFiles = files.filter(file => file.type.startsWith('image/'));
-    if (validFiles.length === 0) {
-      alert('Por favor selecciona solo archivos de imagen');
-      return;
-    }
-
-    setPostImages(prev => [...prev, ...validFiles]);
+    const file = files[0];
     
-    // Crear previews
-    validFiles.forEach(file => {
+    if (file.type.startsWith('image/')) {
+      const validFiles = files.filter(f => f.type.startsWith('image/'));
+      if (validFiles.length === 0) {
+        alert('Por favor selecciona solo archivos de imagen');
+        return;
+      }
+
+      setPostImages(prev => [...prev, ...validFiles]);
+      
+      validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    } else if (file.type.startsWith('video/')) {
+      if (file.size > 100 * 1024 * 1024) {
+        alert('El video no puede superar 100MB');
+        return;
+      }
+      setVideoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result as string]);
+        setVideoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    });
+    }
   };
 
   const removeImage = (index: number) => {
     setPostImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreview(null);
+  };
+
+  const handleCameraClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*';
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) {
+        handleImageUpload({ target } as React.ChangeEvent<HTMLInputElement>);
+      }
+    };
+    input.click();
+  };
+
+  const handleAiEnhance = async () => {
+    if (!newPost.trim()) {
+      alert('Escribe algo primero para mejorar con IA');
+      return;
+    }
+
+    // Mejora local si no hay API key
+    let enhancedText = newPost.trim();
+    
+    // Añadir emojis relevantes
+    const emojiMap: Record<string, string> = {
+      'oferta': '🔥',
+      'descuento': '💰',
+      'promoción': '🎉',
+      'producto': '📦',
+      'servicio': '💼',
+      'curso': '📚',
+      'nuevo': '✨',
+      'premium': '⭐',
+      'limitado': '⏰',
+      'gratis': '🆓'
+    };
+    
+    Object.entries(emojiMap).forEach(([keyword, emoji]) => {
+      if (enhancedText.toLowerCase().includes(keyword) && !enhancedText.includes(emoji)) {
+        enhancedText = `${emoji} ${enhancedText}`;
+      }
+    });
+    
+    // Primera letra mayúscula
+    enhancedText = enhancedText.charAt(0).toUpperCase() + enhancedText.slice(1);
+    
+    // Corregir espacios dobles
+    enhancedText = enhancedText.replace(/\s+/g, ' ');
+    
+    // Añadir hashtags relevantes
+    const hashtags = ['#IONMAX', '#Ecuador', '#Ofertas'];
+    if (!enhancedText.includes('#')) {
+      enhancedText += '\n\n' + hashtags.join(' ');
+    }
+    
+    setNewPost(enhancedText);
+    setShowAiModal(false);
   };
 
   const uploadImagesToSupabase = async (files: File[]): Promise<string[]> => {
@@ -297,24 +378,41 @@ export function ComunidadPage() {
     if (!user || !newPost.trim()) return;
     setPosting(true);
     try {
-      let imageUrls: string[] = [];
+      let uploadedImageUrl: string | null = null;
+      let uploadedVideoUrl: string | null = null;
+      
       if (postImages.length > 0) {
-        imageUrls = await uploadImagesToSupabase(postImages);
+        const imageUrls = await uploadImagesToSupabase(postImages);
+        uploadedImageUrl = imageUrls[0] || null;
       }
       
-      await createCommunityPost(
-        user.id, 
-        newPost.trim(), 
-        imageUrls[0], 
-        imageUrls
-      );
+      const { supabase } = await import("@/src/lib/supabase/client");
+      const payload = {
+        user_id: user.id,
+        content: newPost.trim(),
+        image_url: uploadedImageUrl,
+        video_url: uploadedVideoUrl
+      };
+      
+      console.log('PAYLOAD', payload);
+      
+      const { error } = await supabase.from('community_posts').insert(payload);
+      
+      console.log('ERROR', error);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
       setNewPost("");
       setPostImages([]);
       setImagePreviews([]);
       const postsData = await getCommunityPosts();
       setPosts(postsData);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo publicar. Verifica las tablas en Supabase.");
+      const errorMessage = error instanceof Error ? error.message : "No se pudo publicar. Verifica las tablas en Supabase.";
+      alert(errorMessage);
+      console.error('Error al publicar:', error);
     } finally {
       setPosting(false);
     }
@@ -464,23 +562,40 @@ export function ComunidadPage() {
                     ))}
                   </div>
                 )}
+                
+                {/* Preview de video */}
+                {videoPreview && (
+                  <div className="relative group">
+                    <video
+                      src={videoPreview}
+                      controls
+                      className="w-full h-48 object-cover rounded-xl"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeVideo}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
-                    📷
-                  </button>
-                </label>
-                <button type="button" className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition">
+                <button 
+                  type="button" 
+                  onClick={handleCameraClick}
+                  className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
+                >
+                  📷
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAiModal(true)}
+                  className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
+                >
                   <Sparkles className="h-4 w-4" />
                 </button>
               </div>
@@ -493,6 +608,32 @@ export function ComunidadPage() {
               </button>
             </div>
           </form>
+
+          {/* Modal de IA */}
+          {showAiModal && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="rounded-3xl border border-white/10 bg-zinc-950 p-6 max-w-md w-full">
+                <h3 className="text-xl font-black text-white mb-4">Mejorar con IA ✨</h3>
+                <p className="text-sm text-zinc-400 mb-6">
+                  Mejoraremos tu texto añadiendo emojis relevantes, corrigiendo espacios y añadiendo hashtags para mayor alcance.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAiModal(false)}
+                    className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-black text-white hover:bg-white/10 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleAiEnhance}
+                    className="flex-1 rounded-full bg-yellow-400 px-4 py-3 text-sm font-black text-black hover:bg-yellow-300 transition"
+                  >
+                    Mejorar ahora
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* FILTROS */}
           <div className="flex gap-2">

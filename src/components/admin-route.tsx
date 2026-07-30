@@ -9,24 +9,46 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    async function checkAdminStatus() {
+      if (loading) return;
 
-    if (!user) {
-      router.replace("/login");
-      return;
+      if (!user) {
+        router.replace("/login");
+        return;
+      }
+
+      // Verificar si es owner por email
+      const isOwner = isOwnerEmail(user.email);
+      
+      // Verificar is_admin en Supabase
+      let isAdminFromDb = false;
+      try {
+        const { supabase } = await import("@/src/lib/supabase/client");
+        const { data } = await supabase
+          .from("profiles")
+          .select("is_admin, role")
+          .eq("id", user.id)
+          .single();
+        
+        isAdminFromDb = data?.is_admin || data?.role === 'owner' || false;
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+      }
+      
+      setIsAdmin(isOwner || isAdminFromDb);
+      
+      if (!isOwner && !isAdminFromDb) {
+        router.replace("/");
+        return;
+      }
+
+      setReady(true);
     }
-
-    // Verificar si es owner por email
-    const isOwner = isOwnerEmail(user.email);
     
-    if (!isOwner) {
-      router.replace("/dashboard");
-      return;
-    }
-
-    setReady(true);
+    checkAdminStatus();
   }, [loading, router, user]);
 
   if (loading || !ready) {

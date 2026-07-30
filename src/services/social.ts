@@ -87,7 +87,7 @@ export async function getCommunityMembers(excludeUserId?: string): Promise<Commu
 export async function getCommunityPosts(): Promise<CommunityPost[]> {
   const { data, error } = await supabase
     .from("community_posts")
-    .select("id, user_id, content, created_at, image_url, images, media_type, likes_count, comments_count, profiles:user_id ( id, email, full_name, bio, profession, avatar_url )")
+    .select("id, user_id, content, created_at, image_url, video_url, images, media_type, likes_count, comments_count")
     .order("created_at", { ascending: false })
     .limit(40);
 
@@ -96,33 +96,33 @@ export async function getCommunityPosts(): Promise<CommunityPost[]> {
     throw error;
   }
 
-  return (data ?? []).map((post) => {
-    const raw = post as {
-      id: string;
-      user_id: string;
-      content: string;
-      created_at: string;
-      image_url?: string | null;
-      images?: string[] | null;
-      media_type?: string | null;
-      likes_count?: number | null;
-      comments_count?: number | null;
-      profiles?: CommunityMember | CommunityMember[] | null;
-    };
-    const author = Array.isArray(raw.profiles) ? raw.profiles[0] ?? null : raw.profiles ?? null;
-    return {
-      id: raw.id,
-      user_id: raw.user_id,
-      content: raw.content,
-      created_at: raw.created_at,
-      image_url: raw.image_url,
-      images: raw.images,
-      media_type: raw.media_type,
-      likes_count: raw.likes_count,
-      comments_count: raw.comments_count,
-      author,
-    };
-  });
+  // Obtener profiles por separado para evitar FK errors
+  const userIds = (data ?? []).map(post => post.user_id);
+  const profilesMap = new Map<string, CommunityMember>();
+  
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, bio, profession, avatar_url, created_at")
+      .in("id", userIds);
+    
+    (profiles ?? []).forEach(profile => {
+      profilesMap.set(profile.id, profile);
+    });
+  }
+
+  return (data ?? []).map((post) => ({
+    id: post.id,
+    user_id: post.user_id,
+    content: post.content,
+    created_at: post.created_at,
+    image_url: post.image_url,
+    images: post.images,
+    media_type: post.media_type,
+    likes_count: post.likes_count,
+    comments_count: post.comments_count,
+    author: profilesMap.get(post.user_id) || null,
+  }));
 }
 
 export async function createCommunityPost(userId: string, content: string, imageUrl?: string, images?: string[]) {
