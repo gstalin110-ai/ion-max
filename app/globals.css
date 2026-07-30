@@ -94,6 +94,77 @@ body {
   outline-offset: 2px;
 }
 
+/* Reducir movimiento para usuarios con preferencia de reducción de movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Alto contraste para accesibilidad */
+@media (prefers-contrast: high) {
+  :root {
+    --border-primary: rgba(255, 255, 255, 0.3);
+    --border-secondary: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Texto legible - tamaño mínimo */
+body {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Links accesibles */
+a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover,
+a:focus {
+  text-decoration-thickness: 2px;
+}
+
+/* Botones accesibles */
+button {
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Inputs accesibles */
+input, textarea, select {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible override para elementos que necesitan ser visibles al focus */
+.sr-only.focus:not(:focus):not(:focus-within) {
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Transiciones suaves para elementos interactivos */
 button, a, input, textarea, select {
   transition: all 0.2s ease;

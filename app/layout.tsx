@@ -53,8 +53,19 @@ export default function RootLayout({
           <AuthProvider>
             <RootProviders>
               <ServiceWorkerRegister />
+              
+              {/* Skip Link para Accesibilidad WCAG */}
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-yellow-400 text-black px-4 py-2 rounded-lg font-black z-50"
+              >
+                Saltar al contenido principal
+              </a>
+              
               <GlobalNav />
-              <div className="pt-16">{children}</div>
+              <main id="main-content" className="pt-16">
+                {children}
+              </main>
               <MobileBottomNav />
               <CommandPalette />
             </RootProviders>
