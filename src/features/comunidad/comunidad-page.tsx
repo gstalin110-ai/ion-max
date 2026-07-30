@@ -164,6 +164,8 @@ export function ComunidadPage() {
     }
   };
 
+  const isFollowing = (memberId: string) => following.has(memberId);
+
   const toggleBookmark = (postId: string) => {
     setBookmarkedPosts(prev => {
       const updated = new Set(prev);
@@ -854,9 +856,15 @@ export function ComunidadPage() {
           {/* RECOMENDACIONS */}
           <RecommendationsComponent />
 
-          {/* VENDEDORES DESTACADOS */}
+          {/* VENDEDORES DESTACADOS PREMIUM */}
           <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-            <h2 className="text-lg font-black text-white mb-4">Vendedores destacados</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Award className="h-5 w-5 text-yellow-400" />
+                Vendedores destacados
+              </h2>
+              <span className="text-xs text-zinc-500">{members.length} miembros</span>
+            </div>
             <input
               type="search"
               value={search}
@@ -866,19 +874,36 @@ export function ComunidadPage() {
             />
             <div className="max-h-[400px] space-y-3 overflow-y-auto">
               {filteredMembers.slice(0, 5).map((member) => (
-                <div
+                <motion.div
                   key={member.id}
-                  className="rounded-2xl border border-white/10 bg-black/60 p-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl border border-white/10 bg-black/60 p-4 hover:border-white/20 transition"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
-                    <div className="flex-1">
-                      <p className="font-bold text-white">{member.full_name ?? "Sin nombre"}</p>
-                      <p className="text-xs text-zinc-500">{member.profession ?? "Profesional"}</p>
+                    <div className="relative">
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
+                        {(member.full_name ?? "?")[0]?.toUpperCase()}
+                      </div>
+                      {member.profession && (
+                        <div className="absolute -bottom-1 -right-1 rounded-full bg-green-500 p-1">
+                          <div className="h-2 w-2 rounded-full bg-white" />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-yellow-400">4.8</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-white">{member.full_name ?? "Sin nombre"}</p>
+                        {member.profession && (
+                          <span className="rounded-full bg-blue-400/10 px-2 py-0.5 text-[10px] font-black text-blue-400">
+                            {member.profession}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-500 flex items-center gap-2">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        4.8 · {Math.floor(Math.random() * 500) + 100} seguidores
+                      </p>
                     </div>
                   </div>
                   {member.bio && (
@@ -887,26 +912,36 @@ export function ComunidadPage() {
                   <div className="mt-3 flex gap-2">
                     <button
                       onClick={() => openChat(member)}
-                      className="flex-1 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/20 text-center"
+                      className="flex-1 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition flex items-center justify-center gap-2"
                     >
-                      <MessageCircle className="mr-1 h-3 w-3 inline" />
+                      <MessageCircle className="h-3 w-3" />
                       Mensaje
                     </button>
                     <button
                       onClick={() => toggleFollow(member.id)}
-                      className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
-                        following.has(member.id)
+                      className={`flex-1 rounded-full border px-3 py-2 text-xs font-bold transition flex items-center justify-center gap-2 ${
+                        isFollowing(member.id)
                           ? "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
-                          : "border-yellow-400/30 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
+                          : "border-yellow-400/30 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 hover:border-yellow-400/50"
                       }`}
                     >
-                      {following.has(member.id) ? "Siguiendo" : "Seguir"}
+                      {isFollowing(member.id) ? (
+                        <>
+                          <Heart className="h-3 w-3 fill-current" />
+                          Siguiendo
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-3 w-3" />
+                          Seguir
+                        </>
+                      )}
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
               {filteredMembers.length === 0 && (
-                <p className="text-sm text-zinc-500">No hay vendedores que coincidan.</p>
+                <p className="text-sm text-zinc-500 text-center py-4">No hay vendedores que coincidan.</p>
               )}
             </div>
           </div>
