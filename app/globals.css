@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+:root {
+  /* Colores de Dark Mode Premium */
+  --bg-primary: #000000;
+  --bg-secondary: #09090b;
+  --bg-tertiary: #18181b;
+  --bg-gradient-start: #1a1a2e;
+  --bg-gradient-mid: #16213e;
+  --bg-gradient-end: #0f0f23;
+  
+  /* Colores de Texto */
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  
+  /* Colores de Acento */
+  --accent-yellow: #facc15;
+  --accent-yellow-hover: #eab308;
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+  --accent-purple: #8b5cf6;
+  --accent-purple-hover: #7c3aed;
+  
+  /* Colores de Borde */
+  --border-primary: rgba(255, 255, 255, 0.1);
+  --border-secondary: rgba(255, 255, 255, 0.05);
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+  
+  /* Gradientes Premium */
+  --gradient-gold: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  --gradient-dark: linear-gradient(180deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 50%, var(--bg-gradient-end) 100%);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -7,11 +46,11 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background:
-    radial-gradient(circle at top, #2a2a2a 0%, #111111 35%, #000000 100%);
-  color: white;
+  background: var(--gradient-dark);
+  color: var(--text-primary);
   overflow-x: hidden;
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -25,14 +64,58 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: var(--bg-tertiary);
   border-radius: 4px;
+  border: 1px solid var(--border-primary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #27272a;
+}
+
+/* Selection personalizado */
+::selection {
+  background: var(--accent-yellow);
+  color: var(--bg-primary);
+}
+
+::-moz-selection {
+  background: var(--accent-yellow);
+  color: var(--bg-primary);
+}
+
+/* Focus visible para accesibilidad */
+:focus-visible {
+  outline: 2px solid var(--accent-yellow);
+  outline-offset: 2px;
+}
+
+/* Transiciones suaves para elementos interactivos */
+button, a, input, textarea, select {
+  transition: all 0.2s ease;
+}
+
+/* Animaciones de carga */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    var(--bg-tertiary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 1000px 100%;
 }
