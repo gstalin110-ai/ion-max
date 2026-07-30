@@ -33,6 +33,43 @@ function getIdentifier(request: NextRequest): string {
   return `${ip}-${userAgent}`;
 }
 
+// Headers de seguridad empresarial
+function setSecurityHeaders(response: NextResponse): NextResponse {
+  // Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.supabase.co https://*.vercel.app https://*.paypal.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://*.vercel.app https://*.paypal.com https://*.googleapis.com; frame-src https://*.paypal.com https://*.stripe.com; media-src 'self' https://*.supabase.co;"
+  );
+  
+  // X-Frame-Options
+  response.headers.set('X-Frame-Options', 'DENY');
+  
+  // X-Content-Type-Options
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  
+  // Referrer-Policy
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Permissions-Policy
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+  );
+  
+  // X-XSS-Protection
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  
+  // Strict-Transport-Security (solo en HTTPS)
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+  }
+  
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   // Rate limiting para APIs críticas
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -48,10 +85,13 @@ export async function middleware(request: NextRequest) {
     } else if (request.nextUrl.pathname.startsWith('/api/listings')) {
       limit = 50; // Moderado para listings
       window = 60000;
+    } else if (request.nextUrl.pathname.startsWith('/api/admin')) {
+      limit = 30; // Muy estricto para admin
+      window = 60000;
     }
 
     if (!checkRateLimit(identifier, limit, window)) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429, headers: {
           'X-RateLimit-Limit': limit.toString(),
@@ -60,19 +100,21 @@ export async function middleware(request: NextRequest) {
           'Retry-After': Math.ceil((rateLimit.get(identifier)?.resetTime || 0) - Date.now() / 1000).toString()
         }}
       );
+      return setSecurityHeaders(response);
     }
   }
 
   try {
     const response = await proxy(request);
     if (response) {
-      return response;
+      return setSecurityHeaders(response);
     }
   } catch (error) {
     console.error("Error en el middleware proxy:", error);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  return setSecurityHeaders(response);
 }
 
 export const config = {
