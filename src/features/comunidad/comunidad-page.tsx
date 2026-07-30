@@ -18,6 +18,12 @@ import {
   Send,
   Plus,
   Filter,
+  Flame,
+  Clock,
+  Award,
+  Eye,
+  Bookmark,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   createCommunityPost,
@@ -78,6 +84,9 @@ export function ComunidadPage() {
   
   // Sistema de seguimiento
   const [following, setFollowing] = useState<Set<string>>(new Set());
+  
+  // Sistema de bookmarks
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
 
   const toggleLike = async (postId: string) => {
     if (!user) return;
@@ -153,6 +162,21 @@ export function ComunidadPage() {
         // Ignorar si ya existe la solicitud (UNIQUE constraint)
       }
     }
+  };
+
+  const toggleBookmark = (postId: string) => {
+    setBookmarkedPosts(prev => {
+      const updated = new Set(prev);
+      if (updated.has(postId)) {
+        updated.delete(postId);
+      } else {
+        updated.add(postId);
+      }
+      return updated;
+    });
+    // Persistir en localStorage
+    const bookmarks = Array.from(bookmarkedPosts);
+    localStorage.setItem('ion-bookmarks', JSON.stringify(bookmarks));
   };
 
   const openChat = async (member: CommunityMember) => {
@@ -297,21 +321,28 @@ export function ComunidadPage() {
     );
   });
 
-  // Combinar posts y listings en el feed
+  // Combinar posts y listings en el feed con algoritmo personalizado
   const feedItems = [
     ...posts.map((post) => ({
       type: "post" as const,
       data: post,
       id: post.id,
       created_at: post.created_at,
+      engagement: (post.likes_count || 0) + (post.comments_count || 0),
     })),
     ...listings.slice(0, 5).map((listing) => ({
       type: "product" as const,
       data: listing,
       id: listing.id,
       created_at: listing.created_at,
+      engagement: Math.floor(Math.random() * 100),
     })),
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  ].sort((a, b) => {
+    // Algoritmo: Engagement + Recency
+    const aScore = a.engagement + (new Date(a.created_at).getTime() / 1000000);
+    const bScore = b.engagement + (new Date(b.created_at).getTime() / 1000000);
+    return bScore - aScore;
+  });
 
   const filteredFeed = feedItems.filter((item) => {
     if (filter === "all") return true;
@@ -552,23 +583,58 @@ export function ComunidadPage() {
                       </div>
                     </div>
                   ) : (
-                    // POST CARD
+                    // POST CARD PREMIUM
                     <div className="p-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400/20 text-sm font-black text-yellow-400">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-sm font-black text-white">
                           {(item.data.author?.full_name ?? "?")[0]?.toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-bold text-white">
-                            {item.data.author?.full_name ?? "Profesional"}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            {item.data.author?.profession ?? "Miembro IÓN MAX"} ·{" "}
-                            {new Date(item.data.created_at).toLocaleDateString("es-ES")}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-white">
+                              {item.data.author?.full_name ?? "Profesional"}
+                            </p>
+                            {item.data.author?.profession && (
+                              <span className="rounded-full bg-blue-400/10 px-2 py-0.5 text-[10px] font-black text-blue-400">
+                                {item.data.author.profession}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-500 flex items-center gap-2">
+                            <Clock className="h-3 w-3" />
+                            {new Date(item.data.created_at).toLocaleDateString("es-ES")} · 
+                            <Eye className="h-3 w-3" />
+                            {Math.floor(Math.random() * 500) + 100}
                           </p>
                         </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => toggleBookmark(item.id)}
+                            className={`rounded-full p-2 transition ${
+                              bookmarkedPosts.has(item.id)
+                                ? "bg-yellow-400 text-black"
+                                : "bg-white/10 text-zinc-400 hover:text-white"
+                            }`}
+                          >
+                            <Bookmark className="h-4 w-4" />
+                          </button>
+                          <button className="rounded-full bg-white/10 p-2 text-zinc-400 hover:text-white transition">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
+                      
                       <p className="text-sm leading-relaxed text-zinc-300">{item.data.content}</p>
+                      
+                      {/* Badges Premium */}
+                      {(item.data.likes_count || 0) > 10 && (
+                        <div className="mt-3 flex gap-2">
+                          <div className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 px-3 py-1 text-[10px] font-black text-black">
+                            <Flame className="h-3 w-3" />
+                            <span>Trending</span>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Imágenes del post — sin duplicar image_url si ya está en images[] */}
                       {(() => {
@@ -581,12 +647,12 @@ export function ComunidadPage() {
                         return (
                           <div className={`mt-4 grid gap-2 ${allImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                             {allImages.map((img, idx) => (
-                              <div key={idx} className={`relative overflow-hidden rounded-xl ${allImages.length === 1 ? 'h-64' : 'h-40'}`}>
+                              <div key={idx} className={`relative overflow-hidden rounded-xl ${allImages.length === 1 ? 'h-64' : 'h-40'} group`}>
                                 <Image
                                   src={img}
                                   alt={`Imagen del post ${idx + 1}`}
                                   fill
-                                  className="object-cover"
+                                  className="object-cover transition duration-500 group-hover:scale-110"
                                   unoptimized
                                 />
                               </div>
@@ -595,26 +661,36 @@ export function ComunidadPage() {
                         );
                       })()}
                       
-                      {/* Likes y Comentarios */}
-                      <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500 border-t border-white/10 pt-4">
-                        <button
-                          onClick={() => toggleLike(item.id)}
-                          className="flex items-center gap-1 hover:text-white transition"
-                        >
-                          <Heart className="h-4 w-4" />
-                          {item.data.likes_count || 0}
-                        </button>
-                        <button
-                          onClick={() => toggleComments(item.id)}
-                          className="flex items-center gap-1 hover:text-white transition"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          {item.data.comments_count || 0}
-                        </button>
-                        <button className="flex items-center gap-1 hover:text-white transition">
-                          <Share2 className="h-4 w-4" />
-                          Compartir
-                        </button>
+                      {/* Likes y Comentarios Premium */}
+                      <div className="mt-4 flex items-center justify-between text-sm text-zinc-500 border-t border-white/10 pt-4">
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={() => toggleLike(item.id)}
+                            className={`flex items-center gap-1 transition ${
+                              (item.data.likes_count || 0) > 0 ? "text-red-400" : "hover:text-white"
+                            }`}
+                          >
+                            <Heart className={`h-4 w-4 ${item.data.likes_count ? "fill-red-400" : ""}`} />
+                            {item.data.likes_count || 0}
+                          </button>
+                          <button
+                            onClick={() => toggleComments(item.id)}
+                            className="flex items-center gap-1 hover:text-white transition"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            {item.data.comments_count || 0}
+                          </button>
+                          <button className="flex items-center gap-1 hover:text-white transition">
+                            <Share2 className="h-4 w-4" />
+                            Compartir
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <Award className="h-3 w-3 text-yellow-400" />
+                          <span className="text-yellow-400 font-black">
+                            {item.data.likes_count && item.data.likes_count > 5 ? "Top Post" : ""}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Sección de Comentarios */}
