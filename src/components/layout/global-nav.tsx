@@ -6,6 +6,7 @@ import { useAuth } from "@/src/contexts/auth-context";
 import { isOwnerEmail } from "@/lib/constants";
 import { LanguageSelector } from "@/src/components/language-selector";
 import { useState } from "react";
+import { Store, Users, ShoppingCart, MessageSquare, User, LogOut } from "lucide-react";
 
 export function GlobalNav() {
   const { user, signOut } = useAuth();
@@ -26,32 +27,55 @@ export function GlobalNav() {
 
         <nav className="flex flex-wrap items-center gap-3 text-sm text-zinc-300">
           <LanguageSelector />
-          <Link href="/marketplace" className="transition hover:text-white">
-            Marketplace
-          </Link>
+          
+          {/* MARKETPLACE SECTION */}
+          <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+            <Store className="w-4 h-4 text-yellow-400" />
+            <Link href="/marketplace" className="transition hover:text-white font-semibold">
+              Marketplace
+            </Link>
+          </div>
+
+          {/* RED SOCIAL SECTION */}
           {user ? (
             <>
-              <Link href="/comunidad" className="transition hover:text-white">
-                Comunidad
-              </Link>
-              <Link href="/mensajes" className="transition hover:text-white">
-                Mensajes
-              </Link>
+              <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+                <Users className="w-4 h-4 text-blue-400" />
+                <Link href="/comunidad" className="transition hover:text-white font-semibold">
+                  Comunidad
+                </Link>
+              </div>
+              
+              <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+                <MessageSquare className="w-4 h-4 text-zinc-400" />
+                <Link href="/mensajes" className="transition hover:text-white">
+                  Mensajes
+                </Link>
+              </div>
+
+              <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+                <ShoppingCart className="w-4 h-4 text-zinc-400" />
+                <Link href="/carrito" className="transition hover:text-white">
+                  Carrito
+                </Link>
+              </div>
+
               {isOwner && (
                 <Link
                   href="/admin"
                   className="rounded-full bg-yellow-400 px-4 py-2 text-xs font-black text-black transition hover:bg-yellow-300"
                 >
-                  Administrar App
+                  Administrar
                 </Link>
               )}
+
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
                 >
-                  {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                  <User className="w-5 h-5" />
                 </button>
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-white/10 bg-zinc-950/95 p-4 backdrop-blur shadow-2xl">
@@ -64,24 +88,19 @@ export function GlobalNav() {
                     <div className="space-y-2">
                       <Link
                         href="/profile"
-                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
                         onClick={() => setShowProfileMenu(false)}
                       >
+                        <User className="w-4 h-4" />
                         Mi Perfil
                       </Link>
                       <Link
                         href="/ordenes"
-                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
+                        className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
                         onClick={() => setShowProfileMenu(false)}
                       >
+                        <Store className="w-4 h-4" />
                         Mis Órdenes
-                      </Link>
-                      <Link
-                        href="/carrito"
-                        className="block rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-white"
-                        onClick={() => setShowProfileMenu(false)}
-                      >
-                        Carrito
                       </Link>
                       <button
                         type="button"
@@ -89,8 +108,9 @@ export function GlobalNav() {
                           void signOut();
                           setShowProfileMenu(false);
                         }}
-                        className="block w-full rounded-xl px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-red-400 transition hover:bg-red-500/10"
                       >
+                        <LogOut className="w-4 h-4" />
                         Cerrar Sesión
                       </button>
                     </div>
@@ -100,10 +120,10 @@ export function GlobalNav() {
             </>
           ) : (
             <Link
-              href="/invite"
+              href="/login"
               className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-xs font-black text-yellow-400 transition hover:bg-yellow-400/20 hover:border-yellow-400/50"
             >
-              Acceder
+              Iniciar Sesión
             </Link>
           )}
         </nav>

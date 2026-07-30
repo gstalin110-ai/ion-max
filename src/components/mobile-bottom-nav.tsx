@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { Home, ShoppingBag, Users, User, Plus } from "lucide-react";
+import { Home, ShoppingBag, Users, User, Plus, MessageSquare, ShoppingCart } from "lucide-react";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
@@ -12,9 +12,9 @@ export function MobileBottomNav() {
 
   const navItems = [
     { href: "/", icon: Home, label: "Inicio" },
-    { href: "/marketplace", icon: ShoppingBag, label: "Tienda", badge: cartCount },
+    { href: "/marketplace", icon: ShoppingBag, label: "Marketplace", badge: cartCount, color: "yellow" },
     { href: "/publish", icon: Plus, label: "Publicar", isCenter: true },
-    { href: "/comunidad", icon: Users, label: "Comunidad" },
+    { href: "/comunidad", icon: Users, label: "Comunidad", color: "blue" },
     { href: "/profile", icon: User, label: "Perfil" },
   ];
 
@@ -48,6 +48,14 @@ export function MobileBottomNav() {
                   className={`transition ${
                     item.isCenter
                       ? "h-7 w-7 text-black"
+                      : item.color === "yellow"
+                      ? isActive
+                      ? "h-6 w-6 text-yellow-400"
+                      : "h-6 w-6 text-zinc-500"
+                      : item.color === "blue"
+                      ? isActive
+                      ? "h-6 w-6 text-blue-400"
+                      : "h-6 w-6 text-zinc-500"
                       : isActive
                       ? "h-6 w-6 text-yellow-400"
                       : "h-6 w-6 text-zinc-500"
@@ -65,6 +73,14 @@ export function MobileBottomNav() {
                 className={`text-[10px] font-medium transition ${
                   item.isCenter
                     ? "text-zinc-300 font-semibold"
+                    : item.color === "yellow"
+                    ? isActive
+                    ? "text-yellow-400"
+                    : "text-zinc-500"
+                    : item.color === "blue"
+                    ? isActive
+                    ? "text-blue-400"
+                    : "text-zinc-500"
                     : isActive
                     ? "text-yellow-400"
                     : "text-zinc-500"
