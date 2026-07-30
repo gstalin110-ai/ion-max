@@ -20,6 +20,8 @@ export interface CommunityMember {
   profession?: string | null;
   avatar_url?: string | null;
   created_at?: string | null;
+  is_admin?: boolean;
+  role?: string;
 }
 
 export interface CommunityPost {
@@ -67,7 +69,7 @@ export interface FriendRequest {
 export async function getCommunityMembers(excludeUserId?: string): Promise<CommunityMember[]> {
   let query = supabase
     .from("profiles")
-    .select("id, email, full_name, bio, profession, avatar_url, created_at")
+    .select("id, email, full_name, bio, profession, avatar_url, created_at, is_admin, role")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -145,7 +147,7 @@ export async function createCommunityPost(userId: string, content: string, image
 export async function getMyProfile(userId: string): Promise<(CommunityMember & { gemini_api_key?: string }) | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, bio, profession, avatar_url, gemini_api_key, created_at")
+    .select("id, email, full_name, bio, profession, avatar_url, gemini_api_key, created_at, is_admin, role")
     .eq("id", userId)
     .maybeSingle();
 

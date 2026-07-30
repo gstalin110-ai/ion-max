@@ -22,9 +22,6 @@ export function ProfilePage() {
     const email = user.email ?? "";
     const fullName = user.user_metadata?.nombre_completo as string | undefined;
     
-    // Verificar si es el dueño
-    setIsOwner(email === "gstalin110@gmail.com");
-    
     async function load() {
       try {
         await ensureProfile(userId, email, fullName);
@@ -33,6 +30,11 @@ export function ProfilePage() {
           setFullName(profile.full_name ?? "");
           setProfession(profile.profession ?? "");
           setBio(profile.bio ?? "");
+          
+          // Verificar si es admin por email o por BD
+          const isOwnerByEmail = email === "gstalin110@gmail.com";
+          const isAdminFromDb = profile.is_admin || profile.role === 'owner' || false;
+          setIsOwner(isOwnerByEmail || isAdminFromDb);
         }
       } finally {
         setLoading(false);
