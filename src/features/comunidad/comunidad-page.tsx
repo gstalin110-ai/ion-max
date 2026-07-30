@@ -61,6 +61,7 @@ export function ComunidadPage() {
   const [selectedChatUser, setSelectedChatUser] = useState<CommunityMember | null>(null);
   const [chatMessages, setChatMessages] = useState<DirectMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   
   // Sugerencias de ayuda para escribir
   const suggestions = [
@@ -196,6 +197,8 @@ export function ComunidadPage() {
   const sendChatMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedChatUser || !chatInput.trim()) return;
+    
+    setIsTyping(true);
     try {
       await sendDirectMessage(user.id, selectedChatUser.id, chatInput.trim());
       setChatInput("");
@@ -203,6 +206,8 @@ export function ComunidadPage() {
       setChatMessages(messages);
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -756,66 +761,115 @@ export function ComunidadPage() {
           </div>
         </div>
 
-        {/* PANEL DE CHAT FLOTANTE */}
+        {/* PANEL DE CHAT FLOTANTE PREMIUM */}
         {showChatPanel && selectedChatUser && (
           <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="fixed bottom-4 right-4 w-80 h-96 rounded-3xl border border-white/10 bg-zinc-950/95 backdrop-blur shadow-2xl z-50 flex flex-col"
+            initial={{ opacity: 0, x: 300, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 300, scale: 0.9 }}
+            className="fixed bottom-4 right-4 w-96 h-[500px] rounded-3xl border border-white/10 bg-zinc-950/95 backdrop-blur shadow-2xl z-50 flex flex-col"
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
+            {/* Header Premium */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-sm font-black text-black">
-                  {selectedChatUser.full_name?.charAt(0) || "?"}
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
+                    {selectedChatUser.full_name?.charAt(0) || "?"}
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 rounded-full bg-green-500 p-1">
+                    <div className="h-2 w-2 rounded-full bg-white" />
+                  </div>
                 </div>
                 <div>
-                  <p className="font-bold text-white text-sm">{selectedChatUser.full_name || "Usuario"}</p>
-                  <p className="text-xs text-zinc-500">{selectedChatUser.profession || "Miembro"}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-white text-sm">{selectedChatUser.full_name || "Usuario"}</p>
+                    <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-black text-green-400">
+                      Online
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500">{selectedChatUser.profession || "Miembro IÓN MAX"}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowChatPanel(false)}
-                className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white transition"
+                className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white hover:bg-white/10 transition"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
             
+            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {chatMessages.length === 0 ? (
-                <p className="text-center text-zinc-500 text-sm">Inicia una conversación</p>
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <MessageCircle className="h-12 w-12 text-zinc-600 mb-3" />
+                  <p className="text-sm text-zinc-500">Inicia una conversación</p>
+                  <p className="text-xs text-zinc-600 mt-1">Envía un mensaje para comenzar</p>
+                </div>
               ) : (
                 chatMessages.map((msg) => (
-                  <div
+                  <motion.div
                     key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                      className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                         msg.sender_id === user?.id
-                          ? "bg-yellow-400 text-black"
-                          : "bg-white/10 text-white"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-sm"
+                          : "bg-white/10 text-white rounded-bl-sm"
                       }`}
                     >
-                      {msg.content}
+                      <p>{msg.content}</p>
+                      <p className={`text-[10px] mt-1 ${
+                        msg.sender_id === user?.id ? "text-blue-200" : "text-zinc-500"
+                      }`}>
+                        {new Date(msg.created_at).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))
+              )}
+              
+              {/* Typing Indicator */}
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-2">
+                    <div className="flex gap-1">
+                      <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="h-2 w-2 rounded-full bg-zinc-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                     </div>
                   </div>
-                ))
+                </motion.div>
               )}
             </div>
             
-            <form onSubmit={sendChatMessage} className="p-4 border-t border-white/10">
+            {/* Input Area Premium */}
+            <form onSubmit={sendChatMessage} className="p-4 border-t border-white/10 bg-gradient-to-r from-blue-500/5 to-purple-500/5">
               <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-full border border-white/10 bg-white/5 p-2 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Escribe un mensaje..."
-                  className="flex-1 rounded-full border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500"
+                  className="flex-1 rounded-full border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500 focus:border-blue-400 focus:outline-none transition"
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-yellow-400 p-2 text-black hover:bg-yellow-300 transition"
+                  disabled={!chatInput.trim() || isTyping}
+                  className="rounded-full bg-gradient-to-r from-blue-500 to-blue-600 p-2 text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="h-4 w-4" />
                 </button>
