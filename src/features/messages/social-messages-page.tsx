@@ -32,11 +32,40 @@ function MensajesContent() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAiEnhance, setShowAiEnhance] = useState(false);
+  const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [mediaQuality, setMediaQuality] = useState<'high' | 'low'>('high');
   const endRef = useRef<HTMLDivElement>(null);
+
+  // Lista de 100 stickers geniales (usando emojis como base)
+  const stickers = [
+    // Emojis de caras
+    "😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃",
+    "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😗", "😚", "😙",
+    "😋", "😛", "😜", "🤪", "😝", "🤑", "🤗", "🤭", "🤫", "🤔",
+    "🤐", "🤨", "😐", "😑", "😶", "😏", "😒", "🙄", "😬", "🤥",
+    "😌", "😔", "😪", "🤤", "😴", "😷", "🤒", "🤕", "🤢", "🤮",
+    // Emojis de manos y gestos
+    "👍", "👎", "👏", "🙌", "🤝", "👋", "🤟", "🤘", "✌️", "🤞",
+    "🤙", "👌", "🤌", "👈", "👉", "👆", "👇", "☝️", "✋", "🤚",
+    // Emojis de corazones
+    "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "🤍", "🤎", "💔",
+    "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟", "⚡",
+    // Emojis de celebración
+    "🎉", "🎊", "🎈", "🎁", "🏆", "🥇", "🥈", "🥉", "⭐", "🌟",
+    "✨", "💫", "🔥", "💥", "💯", "💢", "💫", "🌈", "☀️", "🌙",
+    // Emojis de animales
+    "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯",
+    "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆",
+    // Emojis de comida
+    "🍕", "🍔", "🍟", "🌭", "🍿", "🧂", "🥓", "🥚", "🍳", "🧇",
+    "🥞", "🧈", "🍞", "🥐", "🥖", "🥨", "🧀", "🥗", "🥙", "🥪",
+    // Emojis misceláneos
+    "🎵", "🎶", "🎧", "📱", "💻", "🖥️", "📷", "📸", "📹", "🎥",
+    "📺", "📻", "🎙️", "🎚️", "🎛️", "🧭", "⏰", "⏱️", "⏲️", "🕰️"
+  ];
 
   useEffect(() => {
     if (!user) return;
@@ -365,6 +394,13 @@ function MensajesContent() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowStickerPicker(!showStickerPicker)}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                <Package className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
                 onClick={handleAiEnhance}
                 className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
               >
@@ -487,6 +523,44 @@ function MensajesContent() {
                         className="text-2xl hover:scale-125 transition"
                       >
                         {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Sticker Picker */}
+              {showStickerPicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-20 left-0 bg-zinc-900 border border-white/10 rounded-2xl p-4 shadow-2xl z-50 w-80"
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="text-sm font-bold text-white">Stickers</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowStickerPicker(false)}
+                      className="text-zinc-400 hover:text-white transition"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto">
+                    {stickers.map((sticker, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={async () => {
+                          if (!user || !selectedId) return;
+                          await sendDirectMessage(user.id, selectedId, sticker);
+                          setShowStickerPicker(false);
+                          const updated = await getDirectMessages(user.id, selectedId);
+                          setMessages(updated);
+                        }}
+                        className="text-3xl hover:scale-125 transition p-2 rounded-lg hover:bg-white/10"
+                      >
+                        {sticker}
                       </button>
                     ))}
                   </div>
