@@ -37,7 +37,7 @@ export const POST = withSupabase({ auth: "publishable" }, async (req, ctx) => {
         user_id: user.id,
         code,
         expires_at: expiresAt.toISOString(),
-      });
+      } as any);
 
     if (insertError) {
       console.error("Error insertando código:", insertError);
