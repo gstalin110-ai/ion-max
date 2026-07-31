@@ -119,6 +119,83 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ion_id TEXT UNIQUE;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_settings JSONB DEFAULT '{"profile_visibility": "public", "posts_visibility": "public"}'::jsonb;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ai_role TEXT DEFAULT 'assistant';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ai_consent BOOLEAN DEFAULT false;
+
+-- ============================================
+-- PASO 7.1: Crear tabla password_reset_codes
+-- ============================================
+DROP TABLE IF EXISTS password_reset_codes CASCADE;
+
+CREATE TABLE password_reset_codes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índice para búsquedas rápidas
+CREATE INDEX idx_password_reset_codes_user_id ON password_reset_codes(user_id);
+CREATE INDEX idx_password_reset_codes_code ON password_reset_codes(code);
+CREATE INDEX idx_password_reset_codes_expires_at ON password_reset_codes(expires_at);
+
+-- RLS policies
+ALTER TABLE password_reset_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own reset codes"
+ON password_reset_codes FOR SELECT
+TO authenticated
+USING (user_id = auth.uid());
+
+CREATE POLICY "System can insert reset codes"
+ON password_reset_codes FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "System can update reset codes"
+ON password_reset_codes FOR UPDATE
+TO authenticated
+WITH CHECK (true);
+
+-- ============================================
+-- PASO 7.2: Crear tabla phone_verification_codes
+-- ============================================
+DROP TABLE IF EXISTS phone_verification_codes CASCADE;
+
+CREATE TABLE phone_verification_codes (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    phone TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índice para búsquedas rápidas
+CREATE INDEX idx_phone_verification_codes_user_id ON phone_verification_codes(user_id);
+CREATE INDEX idx_phone_verification_codes_phone ON phone_verification_codes(phone);
+CREATE INDEX idx_phone_verification_codes_expires_at ON phone_verification_codes(expires_at);
+
+-- RLS policies
+ALTER TABLE phone_verification_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own verification codes"
+ON phone_verification_codes FOR SELECT
+TO authenticated
+USING (user_id = auth.uid());
+
+CREATE POLICY "System can insert verification codes"
+ON phone_verification_codes FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+CREATE POLICY "System can update verification codes"
+ON phone_verification_codes FOR UPDATE
+TO authenticated
+WITH CHECK (true);
 
 -- ============================================
 -- PASO 8: Crear tabla follows (para seguir usuarios)

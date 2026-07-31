@@ -6,13 +6,32 @@ import { Invoice } from "@/lib/types";
 import { useAuth } from "@/src/contexts/auth-context";
 import { printInvoiceAsPDF, downloadInvoiceAsHTML } from "@/src/services/invoice-pdf-generator";
 import toast from "react-hot-toast";
-import { FileText, Download, Printer, Calendar, DollarSign, CheckCircle, Clock } from "lucide-react";
+import { FileText, Download, Printer, Calendar, DollarSign, CheckCircle, Clock, TrendingUp, BarChart3, PieChart } from "lucide-react";
 
 export function InvoicesSection() {
   const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"seller" | "buyer">("seller");
+  const [showStats, setShowStats] = useState(true);
+
+  // Calcular estadísticas
+  const stats = {
+    total: invoices.reduce((sum, inv) => sum + inv.amount, 0),
+    pending: invoices.filter(inv => inv.status === 'pending').length,
+    generated: invoices.filter(inv => inv.status === 'generated').length,
+    sent: invoices.filter(inv => inv.status === 'sent').length,
+    average: invoices.length > 0 ? invoices.reduce((sum, inv) => sum + inv.amount, 0) / invoices.length : 0,
+  };
+
+  // Datos para gráficos
+  const statusData = [
+    { label: 'Pendiente', value: stats.pending, color: 'bg-yellow-400' },
+    { label: 'Generada', value: stats.generated, color: 'bg-green-400' },
+    { label: 'Enviada', value: stats.sent, color: 'bg-blue-400' },
+  ].filter(d => d.value > 0);
+
+  const totalInvoices = statusData.reduce((sum, d) => sum + d.value, 0);
 
   useEffect(() => {
     loadInvoices();
@@ -84,6 +103,17 @@ export function InvoicesSection() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowStats(!showStats)}
+            className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
+              showStats
+                ? "bg-yellow-400 text-black"
+                : "bg-white/5 text-zinc-400 hover:bg-white/10"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4 inline mr-1" />
+            Estadísticas
+          </button>
+          <button
             onClick={() => setViewMode("seller")}
             className={`px-4 py-2 rounded-xl text-sm font-black transition-all ${
               viewMode === "seller"
@@ -105,6 +135,80 @@ export function InvoicesSection() {
           </button>
         </div>
       </div>
+
+      {/* Panel de Estadísticas */}
+      {showStats && invoices.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-white/10 bg-black/50 p-4">
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-8 w-8 text-emerald-400" />
+              <div>
+                <p className="text-2xl font-black text-white">${stats.total.toFixed(2)}</p>
+                <p className="text-xs text-zinc-400">Total Facturado</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/50 p-4">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-8 w-8 text-yellow-400" />
+              <div>
+                <p className="text-2xl font-black text-white">${stats.average.toFixed(2)}</p>
+                <p className="text-xs text-zinc-400">Promedio</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/50 p-4">
+            <div className="flex items-center gap-3">
+              <FileText className="h-8 w-8 text-blue-400" />
+              <div>
+                <p className="text-2xl font-black text-white">{invoices.length}</p>
+                <p className="text-xs text-zinc-400">Total Facturas</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/50 p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-400" />
+              <div>
+                <p className="text-2xl font-black text-white">{stats.generated + stats.sent}</p>
+                <p className="text-xs text-zinc-400">Completadas</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gráfico de Distribución por Estado */}
+      {showStats && statusData.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-6">
+          <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <PieChart className="h-4 w-4" />
+            Distribución por Estado
+          </h4>
+          <div className="flex items-center gap-8">
+            <div className="flex-1 space-y-3">
+              {statusData.map((item) => (
+                <div key={item.label} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">{item.label}</span>
+                    <span className="text-white font-bold">{item.value}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full ${item.color} transition-all duration-500`}
+                      style={{ width: `${(item.value / totalInvoices) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-black text-white">{totalInvoices}</div>
+              <p className="text-xs text-zinc-400">Total</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">

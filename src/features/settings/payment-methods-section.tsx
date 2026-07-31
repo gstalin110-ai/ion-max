@@ -10,6 +10,8 @@ export function PaymentMethodsSection() {
   const [paymentMethods, setPaymentMethods] = useState<SellerPaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [qrPreview, setQrPreview] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     type: 'payment_link' as PaymentMethodType,
@@ -67,6 +69,40 @@ export function PaymentMethodsSection() {
   const handleCopy = (value: string) => {
     navigator.clipboard.writeText(value);
     toast.success("Copiado al portapapeles");
+  };
+
+  const handleQrFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar que sea imagen
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor selecciona una imagen");
+      return;
+    }
+
+    // Validar tamaño (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen no puede superar 5MB");
+      return;
+    }
+
+    setQrFile(file);
+
+    // Crear preview y convertir a base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setQrPreview(base64);
+      setFormData({ ...formData, value: base64 });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveQr = () => {
+    setQrFile(null);
+    setQrPreview(null);
+    setFormData({ ...formData, value: '' });
   };
 
   const linksCount = paymentMethods.filter(m => m.type === 'payment_link').length;
@@ -156,15 +192,45 @@ export function PaymentMethodsSection() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-white">
-              {formData.type === 'payment_link' ? 'URL del Enlace' : 'Código QR (base64)'}
+              {formData.type === 'payment_link' ? 'URL del Enlace' : 'Código QR'}
             </label>
-            <input
-              type="text"
-              placeholder={formData.type === 'payment_link' ? 'https://...' : 'data:image/png;base64,...'}
-              value={formData.value}
-              onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400"
-            />
+            {formData.type === 'payment_link' ? (
+              <input
+                type="text"
+                placeholder="https://..."
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400"
+              />
+            ) : (
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQrFileChange}
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-yellow-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-400 file:text-black file:font-black file:cursor-pointer"
+                />
+                {qrPreview && (
+                  <div className="relative inline-block">
+                    <img 
+                      src={qrPreview} 
+                      alt="QR Preview" 
+                      className="h-32 w-32 rounded-lg object-cover border border-white/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveQr}
+                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 transition"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-zinc-500">
+                  Sube una imagen de tu código QR (máx 5MB). La imagen se convertirá automáticamente a base64.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">
