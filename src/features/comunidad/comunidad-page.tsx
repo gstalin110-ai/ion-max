@@ -81,8 +81,11 @@ export function ComunidadPage() {
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
   
-  // Sistema de seguimiento
+  // Sistema de seguimiento (solo para ver publicaciones)
   const [following, setFollowing] = useState<Set<string>>(new Set());
+
+  // Sistema de solicitudes de amistad
+  const [friendRequests, setFriendRequests] = useState<Set<string>>(new Set());
   
   // Sistema de bookmarks
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
@@ -159,7 +162,9 @@ export function ComunidadPage() {
     }
   };
 
+  // Función para seguir (solo ver publicaciones)
   const toggleFollow = async (memberId: string) => {
+    if (!user) return;
     setFollowing(prev => {
       const updated = new Set(prev);
       if (updated.has(memberId)) {
@@ -169,18 +174,38 @@ export function ComunidadPage() {
       }
       return updated;
     });
-    // Persistir en Supabase si no está siguiendo aún
-    if (!following.has(memberId) && user) {
-      try {
-        const { sendFriendRequest } = await import("@/src/services/social");
-        await sendFriendRequest(user.id, memberId);
-      } catch {
-        // Ignorar si ya existe la solicitud (UNIQUE constraint)
+    // Persistir en Supabase
+    try {
+      const { followUser } = await import("@/src/services/social");
+      await followUser(user.id, memberId);
+    } catch (error) {
+      console.error("Error al seguir usuario:", error);
+    }
+  };
+
+  // Función para enviar solicitud de amistad
+  const sendFriendRequest = async (memberId: string) => {
+    if (!user) return;
+    setFriendRequests(prev => {
+      const updated = new Set(prev);
+      if (updated.has(memberId)) {
+        updated.delete(memberId);
+      } else {
+        updated.add(memberId);
       }
+      return updated;
+    });
+    // Persistir en Supabase
+    try {
+      const { sendFriendRequest: sendRequest } = await import("@/src/services/social");
+      await sendRequest(user.id, memberId);
+    } catch (error) {
+      console.error("Error al enviar solicitud de amistad:", error);
     }
   };
 
   const isFollowing = (memberId: string) => following.has(memberId);
+  const hasSentRequest = (memberId: string) => friendRequests.has(memberId);
 
   const toggleBookmark = async (postId: string) => {
     if (!user) return;
@@ -736,8 +761,8 @@ export function ComunidadPage() {
                           <p className="text-xs text-zinc-500 flex items-center gap-2">
                             <Clock className="h-3 w-3" />
                             {new Date(item.data.created_at).toLocaleDateString("es-ES")} · 
-                            <Eye className="h-3 w-3" />
-                            {item.data.views || 0}
+                            <Heart className="h-3 w-3" />
+                            {item.data.likes_count || 0}
                           </p>
                         </div>
                         <div className="flex gap-2">
