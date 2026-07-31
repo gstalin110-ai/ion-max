@@ -44,10 +44,10 @@ export const POST = withSupabase({ auth: "publishable" }, async (req, ctx) => {
     }
 
     // Marcar código como usado
-    await supabase
-      .from("password_reset_codes")
+    await (supabase
+      .from("password_reset_codes") as any)
       .update({ used: true })
-      .eq("id", resetCode.id);
+      .eq("id", (resetCode as any).id);
 
     // Cambiar contraseña
     const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
