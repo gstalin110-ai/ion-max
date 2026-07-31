@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/src/contexts/auth-context";
 import { motion } from "framer-motion";
-import { Send, ShoppingCart, Star, Clock, Search, MoreVertical } from "lucide-react";
+import { Send, ShoppingCart, Star, Clock, Search, MoreVertical, X, Package, Smile, Sparkles, Camera, Image as ImageIcon, Video } from "lucide-react";
 import {
   getCommunityMembers,
   getConversationPartners,
@@ -13,6 +13,7 @@ import {
   type CommunityMember,
   type DirectMessage,
 } from "@/src/services/social";
+import { getListings } from "@/lib/supabase-helpers";
 
 function MensajesContent() {
   const { user } = useAuth();
@@ -26,6 +27,15 @@ function MensajesContent() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAiEnhance, setShowAiEnhance] = useState(false);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [mediaQuality, setMediaQuality] = useState<'high' | 'low'>('high');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +90,104 @@ function MensajesContent() {
   });
 
   const selectedContact = contactList.find((c) => c.id === selectedId);
+
+  const loadProducts = async () => {
+    setLoadingProducts(true);
+    try {
+      const listings = await getListings();
+      setProducts(listings);
+    } catch (error) {
+      console.error("Error loading products:", error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const handleShareProduct = async (product: any) => {
+    if (!user || !selectedId) return;
+    const productMessage = `📦 ${product.title}\n💰 $${product.price}\n🔗 https://ion-max.vercel.app/listing/${product.id}`;
+    await sendDirectMessage(user.id, selectedId, productMessage);
+    setShowProductModal(false);
+    const data = await getDirectMessages(user.id, selectedId);
+    setMessages(data);
+  };
+
+  const emojis = [
+    "😀", "😂", "🥰", "😎", "🤔", "👍", "👎", "❤️", "🔥", "⭐",
+    "🎉", "🎁", "💯", "✨", "🚀", "💪", "🙏", "👋", "😊", "🤗",
+    "😜", "🤩", "😇", "🥳", "😈", "💀", "👻", "🤖", "👽", "🎃",
+    "🦄", "🐱", "🐶", "🦊", "🐼", "🐸", "🦁", "🐯", "🦉", "🦋",
+    "🌈", "☀️", "🌙", "⭐", "🌟", "💫", "🔥", "💧", "🌊", "🍀",
+    "🍕", "🍔", "🍟", "🌮", "🍦", "🍪", "☕", "🥤", "🍺", "🍷"
+  ];
+
+  const handleAddEmoji = (emoji: string) => {
+    setInput(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const handleAiEnhance = async () => {
+    if (!input.trim()) {
+      alert("Escribe algo primero para mejorar con IA");
+      return;
+    }
+
+    let enhancedText = input.trim();
+    
+    // Mejora local si no hay API key
+    const emojiMap: Record<string, string> = {
+      'gracias': '🙏',
+      'hola': '👋',
+      'bueno': '👍',
+      'genial': '🤩',
+      'excelente': '⭐',
+      'precio': '💰',
+      'producto': '📦',
+      'envío': '🚚',
+      'oferta': '🔥',
+      'descuento': '💸'
+    };
+    
+    Object.entries(emojiMap).forEach(([keyword, emoji]) => {
+      if (enhancedText.toLowerCase().includes(keyword) && !enhancedText.includes(emoji)) {
+        enhancedText = `${emoji} ${enhancedText}`;
+      }
+    });
+    
+    // Primera letra mayúscula
+    enhancedText = enhancedText.charAt(0).toUpperCase() + enhancedText.slice(1);
+    
+    // Corregir espacios dobles
+    enhancedText = enhancedText.replace(/\s+/g, ' ');
+    
+    setInput(enhancedText);
+    setShowAiEnhance(false);
+  };
+
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamaño (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      alert("El archivo no puede superar 50MB");
+      return;
+    }
+
+    setMediaFile(file);
+    
+    // Crear preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMediaPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveMedia = () => {
+    setMediaFile(null);
+    setMediaPreview(null);
+  };
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -237,7 +345,45 @@ function MensajesContent() {
             </div>
 
             {/* FORMULARIO DE ENVÍO */}
-            <form onSubmit={handleSend} className="flex gap-3 border-t border-white/10 p-6">
+            <form onSubmit={handleSend} className="flex gap-3 border-t border-white/10 p-6 relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProductModal(true);
+                  loadProducts();
+                }}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                <Package className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                <Smile className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleAiEnhance}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                <Sparkles className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById('media-upload')?.click()}
+                className="rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 hover:text-white hover:bg-white/10 transition"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+              <input
+                id="media-upload"
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleMediaUpload}
+                className="hidden"
+              />
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -255,6 +401,97 @@ function MensajesContent() {
                   <Send className="h-5 w-5" />
                 )}
               </button>
+
+              {/* Preview de multimedia */}
+              {mediaPreview && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute bottom-20 left-0 bg-zinc-900 border border-white/10 rounded-2xl p-4 shadow-2xl z-50"
+                >
+                  <div className="relative">
+                    {mediaFile?.type.startsWith('video/') ? (
+                      <video src={mediaPreview} className="h-40 w-auto rounded-lg" controls />
+                    ) : (
+                      <img src={mediaPreview} alt="Preview" className="h-40 w-auto rounded-lg object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleRemoveMedia}
+                      className="absolute -top-2 -right-2 rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setMediaQuality('high')}
+                        className={`px-3 py-1 text-xs font-black rounded-lg transition ${
+                          mediaQuality === 'high' 
+                            ? 'bg-green-500 text-white' 
+                            : 'bg-white/10 text-zinc-400 hover:bg-white/20'
+                        }`}
+                      >
+                        Alta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMediaQuality('low')}
+                        className={`px-3 py-1 text-xs font-black rounded-lg transition ${
+                          mediaQuality === 'low' 
+                            ? 'bg-orange-500 text-white' 
+                            : 'bg-white/10 text-zinc-400 hover:bg-white/20'
+                        }`}
+                      >
+                        Baja
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Implementar envío de media con calidad seleccionada
+                        handleRemoveMedia();
+                      }}
+                      className="flex-1 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-black text-black hover:bg-yellow-500 transition"
+                    >
+                      Enviar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveMedia}
+                      className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-sm font-black text-white hover:bg-white/20 transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-20 left-0 bg-zinc-900 border border-white/10 rounded-2xl p-4 shadow-2xl z-50"
+                >
+                  <div className="grid grid-cols-10 gap-2">
+                    {emojis.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => handleAddEmoji(emoji)}
+                        className="text-2xl hover:scale-125 transition"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
             </form>
           </>
         ) : (
@@ -265,6 +502,76 @@ function MensajesContent() {
           </div>
         )}
       </section>
+
+      {/* MODAL DE PRODUCTOS */}
+      {showProductModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowProductModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-zinc-950 border border-white/10 rounded-3xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Package className="h-6 w-6 text-yellow-400" />
+                <h3 className="text-xl font-black text-white">Compartir Producto</h3>
+              </div>
+              <button
+                onClick={() => setShowProductModal(false)}
+                className="rounded-full bg-white/10 p-2 text-zinc-400 hover:text-white hover:bg-white/20 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto space-y-3">
+              {loadingProducts ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-8 text-zinc-500">
+                  No hay productos disponibles
+                </div>
+              ) : (
+                products.map((product) => (
+                  <motion.button
+                    key={product.id}
+                    onClick={() => handleShareProduct(product)}
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full rounded-2xl border border-white/10 bg-black p-4 hover:border-yellow-400/30 transition text-left"
+                  >
+                    <div className="flex gap-4">
+                      <div className="h-20 w-20 rounded-xl bg-zinc-800 flex-shrink-0 overflow-hidden">
+                        {product.images?.[0] && (
+                          <img
+                            src={product.images[0]}
+                            alt={product.title}
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-white text-sm line-clamp-2">{product.title}</p>
+                        <p className="text-xs text-zinc-500 mt-1">{product.category_name || "General"}</p>
+                        <p className="text-lg font-black text-yellow-400 mt-2">${product.price}</p>
+                      </div>
+                    </div>
+                  </motion.button>
+                ))
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

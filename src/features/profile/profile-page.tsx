@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/src/contexts/auth-context";
 import { ensureProfile, getMyProfile, updateMyProfile } from "@/src/services/social";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { Shield, Edit3, X, Link as LinkIcon, Globe } from "lucide-react";
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -11,10 +13,19 @@ export function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [profession, setProfession] = useState("");
   const [bio, setBio] = useState("");
+  const [username, setUsername] = useState("");
+  const [socialLinks, setSocialLinks] = useState({
+    instagram: "",
+    facebook: "",
+    twitter: "",
+    linkedin: "",
+    website: ""
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -30,6 +41,14 @@ export function ProfilePage() {
           setFullName(profile.full_name ?? "");
           setProfession(profile.profession ?? "");
           setBio(profile.bio ?? "");
+          setUsername(profile.username ?? "");
+          setSocialLinks(profile.social_links || {
+            instagram: "",
+            facebook: "",
+            twitter: "",
+            linkedin: "",
+            website: ""
+          });
           
           // Verificar si es admin por email o por BD
           const isOwnerByEmail = email === "gstalin110@gmail.com";
@@ -53,8 +72,11 @@ export function ProfilePage() {
         full_name: fullName,
         profession,
         bio,
+        username,
+        social_links
       });
       setMessage("Perfil actualizado correctamente.");
+      setIsEditing(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error al guardar");
     } finally {
@@ -73,11 +95,21 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-zinc-900 to-black p-8">
-        <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Perfil profesional</p>
-        <h1 className="mt-3 text-4xl font-black">Tu identidad en IÓN MAX</h1>
-        <p className="mt-3 text-sm text-zinc-400">
-          Completa tu perfil para que otros profesionales te encuentren en la comunidad.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Perfil profesional</p>
+            <h1 className="mt-3 text-4xl font-black">Tu identidad en IÓN MAX</h1>
+            <p className="mt-3 text-sm text-zinc-400">
+              Completa tu perfil para que otros profesionales te encuentren en la comunidad.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="rounded-full bg-white/10 p-3 text-zinc-400 hover:text-white hover:bg-white/20 transition"
+          >
+            {isEditing ? <X className="h-5 w-5" /> : <Edit3 className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {isOwner && (
@@ -95,16 +127,31 @@ export function ProfilePage() {
           <input
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white"
+            disabled={!isEditing}
+            className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-zinc-400">Username (para tu link único)</label>
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-500 text-sm">ion-max.vercel.app/u/</span>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={!isEditing}
+              placeholder="tu-usuario"
+              className="flex-1 rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
         </div>
         <div>
           <label className="mb-1 block text-sm text-zinc-400">Profesión / sector</label>
           <input
             value={profession}
             onChange={(e) => setProfession(e.target.value)}
+            disabled={!isEditing}
             placeholder="Ej. Consultor digital, Diseñador, Emprendedor..."
-            className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white"
+            className="w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
         <div>
@@ -112,24 +159,87 @@ export function ProfilePage() {
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
+            disabled={!isEditing}
             rows={4}
             placeholder="Cuéntale a la comunidad en qué te especializas..."
-            className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white"
+            className="w-full resize-none rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
+
+        {/* Enlaces sociales */}
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="space-y-3 pt-4 border-t border-white/10"
+          >
+            <p className="text-sm font-bold text-white flex items-center gap-2">
+              <LinkIcon className="h-4 w-4" />
+              Enlaces sociales
+            </p>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Instagram</label>
+              <input
+                value={socialLinks.instagram}
+                onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })}
+                placeholder="https://instagram.com/tu-usuario"
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-xs text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Facebook</label>
+              <input
+                value={socialLinks.facebook}
+                onChange={(e) => setSocialLinks({ ...socialLinks, facebook: e.target.value })}
+                placeholder="https://facebook.com/tu-usuario"
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-xs text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Twitter/X</label>
+              <input
+                value={socialLinks.twitter}
+                onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })}
+                placeholder="https://twitter.com/tu-usuario"
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-xs text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">LinkedIn</label>
+              <input
+                value={socialLinks.linkedin}
+                onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })}
+                placeholder="https://linkedin.com/in/tu-usuario"
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-xs text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-zinc-500">Sitio web</label>
+              <input
+                value={socialLinks.website}
+                onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })}
+                placeholder="https://tu-sitio.com"
+                className="w-full rounded-xl border border-white/10 bg-black px-4 py-2 text-xs text-white"
+              />
+            </div>
+          </motion.div>
+        )}
+
         <p className="text-xs text-zinc-500">{user?.email}</p>
         {message && (
           <p className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
             {message}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-2xl bg-white py-3 text-sm font-black text-black disabled:opacity-50"
-        >
-          {saving ? "Guardando..." : "Guardar perfil"}
-        </button>
+        {isEditing && (
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-2xl bg-white py-3 text-sm font-black text-black disabled:opacity-50"
+          >
+            {saving ? "Guardando..." : "Guardar perfil"}
+          </button>
+        )}
       </form>
     </div>
   );
