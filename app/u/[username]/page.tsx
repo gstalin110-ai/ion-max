@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/src/lib/supabase/server";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 export default async function UsernameRedirect({ params }: { params: { username: string } }) {
-  const supabase = await createClient();
+  const supabase = await createSupabaseServerClient();
   
   // Buscar usuario por username
   const { data: profile } = await supabase
