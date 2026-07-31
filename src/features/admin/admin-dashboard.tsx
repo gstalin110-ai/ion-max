@@ -14,7 +14,10 @@ import {
   getAllOrdersAdmin,
   getSystemStats,
   getRecentActivity,
-  getAllSurveys
+  getAllSurveys,
+  grantFreeSubscription,
+  revokeSubscription,
+  getUserSubscriptions
 } from "@/lib/supabase-helpers";
 import { TicketsManagementSection } from "./tickets-management-section";
 
@@ -29,6 +32,9 @@ export function AdminDashboard() {
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [surveys, setSurveys] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [subscriptionDuration, setSubscriptionDuration] = useState<number>(30);
 
   useEffect(() => {
     if (!user || user.email !== "gstalin110@gmail.com") {
@@ -90,11 +96,21 @@ export function AdminDashboard() {
     }
   }
 
+  async function loadSubscriptions() {
+    try {
+      const data = await getUserSubscriptions();
+      setSubscriptions(data || []);
+    } catch (error) {
+      console.error("Error loading subscriptions:", error);
+    }
+  }
+
   useEffect(() => {
     if (activeTab === "users") loadUsers();
     if (activeTab === "listings") loadListings();
     if (activeTab === "orders") loadOrders();
     if (activeTab === "surveys") loadSurveys();
+    if (activeTab === "subscriptions") loadSubscriptions();
   }, [activeTab]);
 
   if (loading) {
@@ -200,6 +216,16 @@ export function AdminDashboard() {
           }`}
         >
           Tickets
+        </button>
+        <button
+          onClick={() => setActiveTab("subscriptions")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            activeTab === "subscriptions"
+              ? "bg-yellow-400 text-black"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          Suscripciones
         </button>
       </div>
 
@@ -411,6 +437,103 @@ export function AdminDashboard() {
       {activeTab === "tickets" && (
         <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
           <TicketsManagementSection />
+        </div>
+      )}
+
+      {activeTab === "subscriptions" && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
+            <h2 className="text-xl font-black text-white mb-4">Otorgar Suscripción Gratis</h2>
+            <p className="text-sm text-zinc-400 mb-6">
+              Otorga suscripciones gratuitas personalizadas a usuarios específicos.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm text-zinc-400">Seleccionar Usuario</label>
+                <select
+                  value={selectedUser}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white"
+                >
+                  <option value="">Selecciona un usuario...</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name || user.email} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm text-zinc-400">Duración (días)</label>
+                <input
+                  type="number"
+                  value={subscriptionDuration}
+                  onChange={(e) => setSubscriptionDuration(parseInt(e.target.value))}
+                  min="1"
+                  max="365"
+                  className="w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-sm text-white"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!selectedUser) return;
+                  try {
+                    await grantFreeSubscription(selectedUser, subscriptionDuration);
+                    alert("Suscripción otorgada correctamente");
+                    loadSubscriptions();
+                    loadUsers();
+                  } catch (error) {
+                    alert("Error al otorgar suscripción");
+                  }
+                }}
+                disabled={!selectedUser}
+                className="w-full rounded-xl bg-yellow-400 py-3 text-sm font-black text-black disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-300 transition"
+              >
+                Otorgar Suscripción
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-6">
+            <h2 className="text-xl font-black text-white mb-4">Suscripciones Activas ({subscriptions.length})</h2>
+            <div className="space-y-3">
+              {subscriptions.length === 0 ? (
+                <div className="text-center py-8 text-zinc-500">
+                  No hay suscripciones activas
+                </div>
+              ) : (
+                subscriptions.map((sub: any) => (
+                  <div key={sub.id} className="flex items-center justify-between rounded-xl border border-white/5 bg-black px-4 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-white">{sub.full_name || sub.email}</p>
+                      <p className="text-xs text-zinc-400">{sub.email}</p>
+                      <p className="text-xs text-zinc-500">
+                        Tipo: {sub.subscription_type} | 
+                        Expira: {sub.subscription_expiry ? new Date(sub.subscription_expiry).toLocaleDateString('es-ES') : 'N/A'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (confirm(`¿Revocar suscripción de ${sub.full_name || sub.email}?`)) {
+                          try {
+                            await revokeSubscription(sub.id);
+                            alert("Suscripción revocada");
+                            loadSubscriptions();
+                            loadUsers();
+                          } catch (error) {
+                            alert("Error al revocar suscripción");
+                          }
+                        }
+                      }}
+                      className="rounded-lg px-3 py-2 text-xs font-black text-red-400 hover:bg-red-500/10 transition"
+                    >
+                      Revocar
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

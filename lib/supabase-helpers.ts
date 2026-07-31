@@ -1,6 +1,54 @@
 import { supabase } from "./supabase";
 import { Listing, ListingFormData, Profile, Wallet, Order, Role, OrderItem, Payment, ShippingAddress, CheckoutFormData, PaymentMethod, PaymentStatus, OrderStatus } from "./types";
 
+// ========== FUNCIONES DE SUSCRIPCIONES ==========
+
+export async function grantFreeSubscription(userId: string, durationDays: number) {
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + durationDays);
+
+  const { error, data } = await supabase
+    .from("profiles")
+    .update({
+      subscription_status: "active",
+      subscription_expiry: expiryDate.toISOString(),
+      subscription_type: "free_grant"
+    })
+    .eq("id", userId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function revokeSubscription(userId: string) {
+  const { error, data } = await supabase
+    .from("profiles")
+    .update({
+      subscription_status: "inactive",
+      subscription_expiry: null,
+      subscription_type: null
+    })
+    .eq("id", userId)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getUserSubscriptions() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, subscription_status, subscription_expiry, subscription_type")
+    .in("subscription_status", ["active", "trial"])
+    .order("subscription_expiry", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ========== FUNCIONES DE LISTINGS ==========
 
 export async function getListings() {
