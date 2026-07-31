@@ -139,13 +139,37 @@ export async function createCommunityPost(userId: string, content: string, image
       content,
       image_url: imageUrl,
       images,
-      media_type: imageUrl || (images && images.length > 0) ? 'image' : 'text'
+      media_type: imageUrl || images?.length ? 'image' : 'text'
     })
     .select()
     .single();
 
   if (error) throw error;
   return data;
+}
+
+export async function getMyPosts(userId: string): Promise<CommunityPost[]> {
+  const { data, error } = await supabase
+    .from("community_posts")
+    .select("id, user_id, content, created_at, image_url, video_url, images, media_type, likes_count, comments_count")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function deletePost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from("community_posts")
+    .delete()
+    .eq("id", postId);
+
+  if (error) throw error;
 }
 
 export async function getMyProfile(userId: string): Promise<(CommunityMember & { gemini_api_key?: string }) | null> {
@@ -165,7 +189,7 @@ export async function getMyProfile(userId: string): Promise<(CommunityMember & {
 
 export async function updateMyProfile(
   userId: string,
-  updates: { full_name?: string; bio?: string; profession?: string; gemini_api_key?: string }
+  updates: { full_name?: string; bio?: string; profession?: string; gemini_api_key?: string; username?: string; social_links?: any }
 ) {
   const { data, error } = await supabase
     .from("profiles")

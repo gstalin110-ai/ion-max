@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/contexts/auth-context";
-import { ensureProfile, getMyProfile, updateMyProfile } from "@/src/services/social";
+import { ensureProfile, getMyProfile, updateMyProfile, getMyPosts, deletePost } from "@/src/services/social";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Shield, Edit3, X, Link as LinkIcon, Globe } from "lucide-react";
+import { Shield, Edit3, X, Link as LinkIcon, Globe, Trash2, AlertTriangle } from "lucide-react";
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -26,6 +26,8 @@ export function ProfilePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [myPosts, setMyPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -55,8 +57,14 @@ export function ProfilePage() {
           const isAdminFromDb = profile.is_admin || profile.role === 'owner' || false;
           setIsOwner(isOwnerByEmail || isAdminFromDb);
         }
+
+        // Cargar posts del usuario
+        setLoadingPosts(true);
+        const posts = await getMyPosts(userId);
+        setMyPosts(posts);
       } finally {
         setLoading(false);
+        setLoadingPosts(false);
       }
     }
     void load();
@@ -73,7 +81,7 @@ export function ProfilePage() {
         profession,
         bio,
         username,
-        social_links
+        social_links: socialLinks
       });
       setMessage("Perfil actualizado correctamente.");
       setIsEditing(false);
@@ -81,6 +89,18 @@ export function ProfilePage() {
       setMessage(error instanceof Error ? error.message : "Error al guardar");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDeletePost(postId: string) {
+    if (!confirm("¿Estás seguro de eliminar este post? Esta acción no se puede deshacer.")) return;
+    
+    try {
+      await deletePost(postId);
+      setMyPosts(prev => prev.filter(post => post.id !== postId));
+      setMessage("Post eliminado correctamente.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al eliminar post");
     }
   }
 
@@ -241,6 +261,59 @@ export function ProfilePage() {
           </button>
         )}
       </form>
+
+      {/* Sección de gestión de contenido */}
+      <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Trash2 className="h-5 w-5 text-red-400" />
+          Gestión de Contenido
+        </h2>
+        <p className="text-sm text-zinc-400 mb-4">
+          Elimina tus posts de la comunidad. Esta acción no se puede deshacer.
+        </p>
+
+        {loadingPosts ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+          </div>
+        ) : myPosts.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8 text-center">
+            <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-zinc-600" />
+            <p className="text-sm text-zinc-400">No tienes posts para eliminar</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {myPosts.map((post) => (
+              <div key={post.id} className="rounded-xl border border-white/10 bg-zinc-900/50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white line-clamp-2 mb-2">{post.content}</p>
+                    {post.image_url && (
+                      <div className="relative h-20 w-20 rounded-lg overflow-hidden mb-2">
+                        <img
+                          src={post.image_url}
+                          alt="Post image"
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    )}
+                    <p className="text-xs text-zinc-500">
+                      {new Date(post.created_at).toLocaleString('es-ES')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeletePost(post.id)}
+                    className="flex-shrink-0 rounded-lg p-2 text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+                    title="Eliminar post"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
