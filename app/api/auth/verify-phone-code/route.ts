@@ -28,9 +28,9 @@ export const POST = withSupabase({ auth: "publishable" }, async (req, ctx) => {
     }
 
     // Marcar código como usado
-    await supabase
-      .from("phone_verification_codes")
-      .update({ used: true } as any)
+    await (supabase
+      .from("phone_verification_codes") as any)
+      .update({ used: true })
       .eq("id", (verificationCode as any).id);
 
     return NextResponse.json({ message: "Teléfono verificado exitosamente" });
