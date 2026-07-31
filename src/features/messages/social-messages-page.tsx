@@ -324,11 +324,6 @@ function MensajesContent() {
                     <p className="font-black text-white text-lg">{selectedContact.full_name ?? selectedContact.email}</p>
                     <div className="flex items-center gap-3 text-sm text-zinc-500">
                       <span>{selectedContact.profession ?? "Miembro de la comunidad"}</span>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-yellow-400">4.8 rating</span>
-                      </div>
                     </div>
                   </div>
                 </div>
