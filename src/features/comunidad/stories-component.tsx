@@ -15,6 +15,11 @@ interface Story {
   image: string;
   duration?: number;
   link?: string;
+  userName?: string;
+  userAvatar?: string;
+  userId?: string;
+  views?: number;
+  createdAt?: string;
 }
 
 export function StoriesComponent() {
@@ -29,7 +34,7 @@ export function StoriesComponent() {
     queryFn: getListings,
   });
 
-  // Crear stories de ejemplo con productos
+  // Crear stories de ejemplo con productos y usuarios
   const stories: Story[] = [
     ...listings.slice(0, 5).map((listing) => ({
       id: listing.id,
@@ -37,6 +42,11 @@ export function StoriesComponent() {
       title: listing.title,
       image: listing.images?.[0] || "/placeholder.png",
       link: `/listing/${listing.id}`,
+      userName: listing.profiles?.full_name || "Vendedor",
+      userAvatar: listing.profiles?.avatar_url || undefined,
+      userId: listing.profiles?.id,
+      views: Math.floor(Math.random() * 1000) + 100,
+      createdAt: new Date(Date.now() - Math.random() * 86400000).toISOString(),
     })),
     {
       id: "promo-1",
@@ -44,6 +54,10 @@ export function StoriesComponent() {
       title: "¡Oferta Especial!",
       image: "/placeholder.png",
       link: "/marketplace",
+      userName: "IÓN MAX",
+      userAvatar: "/logo.png",
+      views: Math.floor(Math.random() * 5000) + 1000,
+      createdAt: new Date().toISOString(),
     },
   ];
 
@@ -224,19 +238,43 @@ export function StoriesComponent() {
                 {/* Story Info Premium */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/90 to-transparent p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
-                      {stories[activeStory].title.charAt(0)}
-                    </div>
+                    {stories[activeStory].userAvatar ? (
+                      <div className="relative h-12 w-12 rounded-full overflow-hidden">
+                        <Image
+                          src={stories[activeStory].userAvatar}
+                          alt={stories[activeStory].userName || "Usuario"}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
+                        {stories[activeStory].userName?.charAt(0) || "U"}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-black text-white text-lg">Vendedor Premium</p>
-                        <div className="flex items-center gap-1 rounded-full bg-yellow-400/10 px-2 py-0.5 text-[10px] font-black text-yellow-400">
-                          <Flame className="h-3 w-3" />
-                          <span>Top</span>
-                        </div>
+                        <p className="font-black text-white text-lg">{stories[activeStory].userName || "Usuario"}</p>
+                        {stories[activeStory].type === "promotion" && (
+                          <div className="flex items-center gap-1 rounded-full bg-yellow-400/10 px-2 py-0.5 text-[10px] font-black text-yellow-400">
+                            <Flame className="h-3 w-3" />
+                            <span>Top</span>
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-zinc-400 flex items-center gap-2">
-                        Hace 2 horas · 1.2K vistas
+                        {stories[activeStory].createdAt && (
+                          <>
+                            {new Date(stories[activeStory].createdAt).toLocaleString('es-ES', { 
+                              hour: 'numeric', 
+                              minute: 'numeric',
+                              day: 'numeric',
+                              month: 'short'
+                            })} ·
+                          </>
+                        )}
+                        {stories[activeStory].views && `${stories[activeStory].views} vistas`}
                       </p>
                     </div>
                   </div>
