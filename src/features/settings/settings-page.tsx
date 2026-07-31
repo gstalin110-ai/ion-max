@@ -350,7 +350,7 @@ export function SettingsPage() {
               : "bg-white/5 text-zinc-400 hover:bg-white/10"
           }`}
         >
-          Facturas
+          Resultados
         </button>
         <button
           onClick={() => setActiveTab("tickets")}

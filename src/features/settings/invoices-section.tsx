@@ -98,8 +98,8 @@ export function InvoicesSection() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-white">Facturas Electrónicas</h3>
-          <p className="text-sm text-zinc-400">Gestiona tus facturas con diseño exclusivo IÓN MAX</p>
+          <h3 className="text-lg font-bold text-white">Resultados de Ventas</h3>
+          <p className="text-sm text-zinc-400">Gráficos en tiempo real de tus ventas y facturación</p>
         </div>
         <div className="flex gap-2">
           <button
