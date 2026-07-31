@@ -189,7 +189,7 @@ export async function getMyProfile(userId: string): Promise<(CommunityMember & {
 
 export async function updateMyProfile(
   userId: string,
-  updates: { full_name?: string; bio?: string; profession?: string; gemini_api_key?: string; username?: string; social_links?: any }
+  updates: { full_name?: string; bio?: string; profession?: string; gemini_api_key?: string; username?: string; social_links?: any; avatar_url?: string | null }
 ) {
   const { data, error } = await supabase
     .from("profiles")

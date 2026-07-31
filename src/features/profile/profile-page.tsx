@@ -5,7 +5,8 @@ import { useAuth } from "@/src/contexts/auth-context";
 import { ensureProfile, getMyProfile, updateMyProfile, getMyPosts, deletePost } from "@/src/services/social";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Shield, Edit3, X, Link as LinkIcon, Globe, Trash2, AlertTriangle } from "lucide-react";
+import { Shield, Edit3, X, Link as LinkIcon, Globe, Trash2, AlertTriangle, Camera, Upload } from "lucide-react";
+import { supabase } from "@/src/lib/supabase/client";
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -44,6 +47,7 @@ export function ProfilePage() {
           setProfession(profile.profession ?? "");
           setBio(profile.bio ?? "");
           setUsername(profile.username ?? "");
+          setAvatarUrl(profile.avatar_url ?? null);
           setSocialLinks(profile.social_links || {
             instagram: "",
             facebook: "",
@@ -104,6 +108,85 @@ export function ProfilePage() {
     }
   }
 
+  async function handleAvatarUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      if (!event.target.files || event.target.files.length === 0) return;
+      
+      const file = event.target.files[0];
+      
+      // Validar tamaño máximo (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage("La imagen no puede superar 2MB");
+        return;
+      }
+
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        setMessage("Solo se permiten archivos de imagen");
+        return;
+      }
+
+      setUploadingAvatar(true);
+      setMessage(null);
+
+      if (!user) return;
+
+      // Crear nombre único para el archivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // Subir a Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Obtener URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Actualizar perfil con nueva URL
+      await updateMyProfile(user.id, { avatar_url: publicUrl });
+      setAvatarUrl(publicUrl);
+      setMessage("Foto de perfil actualizada correctamente.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al subir foto de perfil");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!confirm("¿Estás seguro de eliminar tu foto de perfil?")) return;
+    
+    try {
+      if (!user) return;
+
+      // Eliminar avatar de Supabase Storage si existe
+      if (avatarUrl) {
+        const fileName = avatarUrl.split('/').pop();
+        if (fileName) {
+          await supabase.storage
+            .from('avatars')
+            .remove([`avatars/${fileName}`]);
+        }
+      }
+
+      // Actualizar perfil sin avatar
+      await updateMyProfile(user.id, { avatar_url: null });
+      setAvatarUrl(null);
+      setMessage("Foto de perfil eliminada correctamente.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al eliminar foto de perfil");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -142,6 +225,55 @@ export function ProfilePage() {
       )}
 
       <form onSubmit={handleSave} className="space-y-4 rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
+        {/* Sección de Foto de Perfil */}
+        <div className="flex items-center gap-4 pb-6 border-b border-white/10">
+          <div className="relative">
+            <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-white/20 bg-zinc-800">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center text-zinc-500">
+                  <span className="text-2xl font-bold">{fullName.charAt(0) || "U"}</span>
+                </div>
+              )}
+            </div>
+            {isEditing && (
+              <label className="absolute bottom-0 right-0 cursor-pointer rounded-full bg-yellow-400 p-2 text-black hover:bg-yellow-300 transition">
+                <Camera className="h-4 w-4" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-white mb-1">Foto de perfil</p>
+            <p className="text-xs text-zinc-400 mb-2">
+              Tamaño máximo: 2MB. Formatos: JPG, PNG, WebP
+            </p>
+            {isEditing && avatarUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveAvatar}
+                className="text-xs text-red-400 hover:text-red-300 transition"
+              >
+                Eliminar foto
+              </button>
+            )}
+            {uploadingAvatar && (
+              <p className="text-xs text-yellow-400 mt-1">Subiendo...</p>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className="mb-1 block text-sm text-zinc-400">Nombre completo</label>
           <input
