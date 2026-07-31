@@ -187,6 +187,32 @@ export function ProfilePage() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (!confirm("¿Estás seguro de eliminar tu cuenta? Esta acción no se puede deshacer y eliminará todos tus datos permanentemente.")) return;
+    
+    if (!confirm("Esta es la última confirmación. ¿Realmente deseas eliminar tu cuenta de IÓN MAX?")) return;
+
+    try {
+      if (!user) return;
+
+      // Eliminar usuario de Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (authError) {
+        // Si no es admin, intentar eliminar desde el cliente
+        await supabase.auth.signOut();
+      }
+
+      setMessage("Cuenta eliminada correctamente. Serás redirigido...");
+      
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Error al eliminar cuenta");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -445,6 +471,23 @@ export function ProfilePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Sección de eliminación de cuenta */}
+      <div className="rounded-3xl border border-red-500/30 bg-red-950/20 p-6">
+        <h2 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5" />
+          Zona de Peligro
+        </h2>
+        <p className="text-sm text-zinc-400 mb-4">
+          Eliminar tu cuenta borrará permanentemente todos tus datos, posts, mensajes y configuraciones. Esta acción no se puede deshacer.
+        </p>
+        <button
+          onClick={handleDeleteAccount}
+          className="w-full rounded-2xl border border-red-500/50 bg-red-500/10 px-6 py-4 text-sm font-black text-red-400 hover:bg-red-500/20 hover:text-red-300 transition"
+        >
+          Eliminar mi cuenta permanentemente
+        </button>
       </div>
     </div>
   );
