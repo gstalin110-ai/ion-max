@@ -132,7 +132,7 @@ export function TrendingPage() {
                   </div>
                   <div className="flex items-center gap-2 text-zinc-500">
                     <Eye className="h-4 w-4" />
-                    <span className="font-black">{Math.floor(Math.random() * 10000) + 1000}</span>
+                    <span className="font-black">{(post.likes_count || 0).toLocaleString()}</span>
                   </div>
                 </div>
 

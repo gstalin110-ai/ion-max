@@ -742,14 +742,14 @@ export function ComunidadPage() {
                     // POST CARD PREMIUM
                     <div className="p-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <Link href={`/profile/${item.data.author?.id}`}>
+                        <Link href={`/u/${item.data.author?.username || item.data.author?.id}`}>
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-sm font-black text-white cursor-pointer hover:scale-105 transition">
                             {(item.data.author?.full_name ?? "?")[0]?.toUpperCase()}
                           </div>
                         </Link>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <Link href={`/profile/${item.data.author?.id}`} className="font-bold text-white hover:text-blue-400 transition">
+                            <Link href={`/u/${item.data.author?.username || item.data.author?.id}`} className="font-bold text-white hover:text-blue-400 transition">
                               {item.data.author?.full_name ?? "Profesional"}
                             </Link>
                             {item.data.author?.profession && (
