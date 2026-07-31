@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 import { GlobalNav } from "@/src/components/layout/global-nav";
 import { MobileBottomNav } from "@/src/components/mobile-bottom-nav";
 import { CommandPalette } from "@/src/components/command-palette";
+import { DeviceProvider } from "@/src/contexts/device-context";
 
 export default function RootLayout({
   children,
@@ -51,24 +52,26 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <LanguageProvider>
           <AuthProvider>
-            <RootProviders>
-              <ServiceWorkerRegister />
-              
-              {/* Skip Link para Accesibilidad WCAG */}
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-yellow-400 text-black px-4 py-2 rounded-lg font-black z-50"
-              >
-                Saltar al contenido principal
-              </a>
-              
-              <GlobalNav />
-              <main id="main-content" className="pt-16">
-                {children}
-              </main>
-              <MobileBottomNav />
-              <CommandPalette />
-            </RootProviders>
+            <DeviceProvider>
+              <RootProviders>
+                <ServiceWorkerRegister />
+                
+                {/* Skip Link para Accesibilidad WCAG */}
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-yellow-400 text-black px-4 py-2 rounded-lg font-black z-50"
+                >
+                  Saltar al contenido principal
+                </a>
+                
+                <GlobalNav />
+                <main id="main-content" className="pt-16">
+                  {children}
+                </main>
+                <MobileBottomNav />
+                <CommandPalette />
+              </RootProviders>
+            </DeviceProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

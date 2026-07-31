@@ -3,12 +3,14 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { useDevice } from "@/src/contexts/device-context";
 import { Home, ShoppingBag, Users, User, Plus, MessageSquare, ShoppingCart } from "lucide-react";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { getItemCount } = useCart();
   const cartCount = getItemCount();
+  const { isMobile } = useDevice();
 
   const navItems = [
     { href: "/", icon: Home, label: "Inicio" },
@@ -17,6 +19,9 @@ export function MobileBottomNav() {
     { href: "/comunidad", icon: Users, label: "Comunidad", color: "blue" },
     { href: "/profile", icon: User, label: "Perfil" },
   ];
+
+  // Solo mostrar en dispositivos móviles
+  if (!isMobile) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-zinc-950/95 backdrop-blur border-t border-white/10 pb-safe">
