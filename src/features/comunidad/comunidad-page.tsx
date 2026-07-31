@@ -45,6 +45,7 @@ import { Listing } from "@/lib/types";
 import { StoriesComponent } from "./stories-component";
 import { NotificationsComponent } from "./notifications-component";
 import { RecommendationsComponent } from "./recommendations-component";
+import { TrendingButton } from "./trending-button";
 
 export function ComunidadPage() {
   const { user } = useAuth();
@@ -93,6 +94,23 @@ export function ComunidadPage() {
   
   // Sistema de bookmarks
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
+  
+  // Estadísticas de amigos
+  const [friendsCount, setFriendsCount] = useState(0);
+
+  useEffect(() => {
+    async function loadFriendsCount() {
+      if (!user) return;
+      try {
+        const { getFriendsCount } = await import("@/src/services/social");
+        const count = await getFriendsCount(user.id);
+        setFriendsCount(count);
+      } catch (error) {
+        console.error("Error loading friends count:", error);
+      }
+    }
+    loadFriendsCount();
+  }, [user]);
 
   const toggleLike = async (postId: string) => {
     if (!user) return;
@@ -693,7 +711,7 @@ export function ComunidadPage() {
                             {item.data.seller_name || "Vendedor Premium"}
                           </p>
                           <p className="text-xs text-zinc-500">
-                            {item.data.seller_rating ? `⭐ ${item.data.seller_rating.toFixed(1)}` : "Vendedor verificado"} ·{" "}
+                            {item.data.seller_rating ? `⭐ ${item.data.seller_rating.toFixed(1)}` : "Nuevo vendedor"} ·{" "}
                             {new Date(item.data.created_at).toLocaleDateString("es-ES")}
                           </p>
                         </div>
@@ -735,14 +753,16 @@ export function ComunidadPage() {
                     // POST CARD PREMIUM
                     <div className="p-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-sm font-black text-white">
-                          {(item.data.author?.full_name ?? "?")[0]?.toUpperCase()}
-                        </div>
+                        <Link href={`/profile/${item.data.author?.id}`}>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-sm font-black text-white cursor-pointer hover:scale-105 transition">
+                            {(item.data.author?.full_name ?? "?")[0]?.toUpperCase()}
+                          </div>
+                        </Link>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="font-bold text-white">
+                            <Link href={`/profile/${item.data.author?.id}`} className="font-bold text-white hover:text-blue-400 transition">
                               {item.data.author?.full_name ?? "Profesional"}
-                            </p>
+                            </Link>
                             {item.data.author?.profession && (
                               <span className="rounded-full bg-blue-400/10 px-2 py-0.5 text-[10px] font-black text-blue-400">
                                 {item.data.author.profession}
@@ -1028,9 +1048,9 @@ export function ComunidadPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-zinc-400">
                   <Users className="h-4 w-4" />
-                  Miembros
+                  Amigos
                 </div>
-                <span className="font-black">{members.length}</span>
+                <span className="font-black">{friendsCount}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-zinc-400">
@@ -1052,126 +1072,8 @@ export function ComunidadPage() {
           {/* RECOMENDACIONS */}
           <RecommendationsComponent />
 
-          {/* VENDEDORES DESTACADOS PREMIUM */}
-          <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Award className="h-5 w-5 text-yellow-400" />
-                Vendedores destacados
-              </h2>
-              <span className="text-xs text-zinc-500">{members.length} miembros</span>
-            </div>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar vendedores..."
-              className="w-full rounded-2xl border border-white/10 bg-black px-4 py-2 text-sm text-white placeholder-zinc-500 mb-4"
-            />
-            <div className="max-h-[400px] space-y-3 overflow-y-auto">
-              {filteredMembers.slice(0, 5).map((member) => (
-                <motion.div
-                  key={member.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-2xl border border-white/10 bg-black/60 p-4 hover:border-white/20 transition"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-sm font-black text-white">
-                        {(member.full_name ?? "?")[0]?.toUpperCase()}
-                      </div>
-                      {member.profession && (
-                        <div className="absolute -bottom-1 -right-1 rounded-full bg-green-500 p-1">
-                          <div className="h-2 w-2 rounded-full bg-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-white">{member.full_name ?? "Sin nombre"}</p>
-                        {member.profession && (
-                          <span className="rounded-full bg-blue-400/10 px-2 py-0.5 text-[10px] font-black text-blue-400">
-                            {member.profession}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-zinc-500 flex items-center gap-2">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        4.8 · {Math.floor(Math.random() * 500) + 100} seguidores
-                      </p>
-                    </div>
-                  </div>
-                  {member.bio && (
-                    <p className="mt-2 line-clamp-2 text-xs text-zinc-400">{member.bio}</p>
-                  )}
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => openChat(member)}
-                      className="flex-1 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition flex items-center justify-center gap-2"
-                    >
-                      <MessageCircle className="h-3 w-3" />
-                      Mensaje
-                    </button>
-                    <button
-                      onClick={() => toggleFollow(member.id)}
-                      className={`flex-1 rounded-full border px-3 py-2 text-xs font-bold transition flex items-center justify-center gap-2 ${
-                        isFollowing(member.id)
-                          ? "border-white/10 bg-white/5 text-zinc-400 hover:text-white"
-                          : "border-yellow-400/30 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 hover:border-yellow-400/50"
-                      }`}
-                    >
-                      {isFollowing(member.id) ? (
-                        <>
-                          <Heart className="h-3 w-3 fill-current" />
-                          Siguiendo
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-3 w-3" />
-                          Seguir
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-              {filteredMembers.length === 0 && (
-                <p className="text-sm text-zinc-500 text-center py-4">No hay vendedores que coincidan.</p>
-              )}
-            </div>
-          </div>
-
-          {/* PRODUCTOS TRENDING */}
-          <div className="rounded-3xl border border-white/10 bg-zinc-950/80 p-5">
-            <h2 className="text-lg font-black text-white mb-4">Productos Trending</h2>
-            <div className="space-y-3">
-              {listings.slice(0, 3).map((listing) => (
-                <Link
-                  key={listing.id}
-                  href={`/listing/${listing.id}`}
-                  className="block rounded-2xl border border-white/10 bg-black/60 p-3 hover:border-white/20 transition"
-                >
-                  <div className="flex gap-3">
-                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
-                      <Image
-                        src={listing.images?.[0] || "/placeholder.png"}
-                        alt={listing.title}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-white text-sm line-clamp-1">{listing.title}</p>
-                      <p className="text-xs text-zinc-500">{listing.category_name || "General"}</p>
-                      <p className="mt-1 font-black text-yellow-400">${listing.price}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+          {/* TRENDING - Botón redondo */}
+          <TrendingButton />
         </aside>
       </div>
     </div>

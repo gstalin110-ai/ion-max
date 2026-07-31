@@ -154,7 +154,7 @@ function MensajesContent() {
                       <span className="text-yellow-400">4.8</span>
                     </div>
                   </div>
-                  <p className="text-xs text-zinc-500 truncate">{contact.profession ?? "Vendedor Premium"}</p>
+                  <p className="text-xs text-zinc-500 truncate">{contact.profession ?? "Miembro de la comunidad"}</p>
                   {partners.some((p) => p.id === contact.id) && (
                     <div className="flex items-center gap-1 mt-1 text-[10px] text-green-400">
                       <Clock className="h-3 w-3" />
@@ -186,7 +186,7 @@ function MensajesContent() {
                   <div>
                     <p className="font-black text-white text-lg">{selectedContact.full_name ?? selectedContact.email}</p>
                     <div className="flex items-center gap-3 text-sm text-zinc-500">
-                      <span>{selectedContact.profession ?? "Vendedor Premium"}</span>
+                      <span>{selectedContact.profession ?? "Miembro de la comunidad"}</span>
                       <span>•</span>
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

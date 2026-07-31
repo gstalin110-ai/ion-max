@@ -22,6 +22,10 @@ export interface CommunityMember {
   created_at?: string | null;
   is_admin?: boolean;
   role?: string;
+  ion_id?: string;
+  username?: string;
+  privacy_settings?: any;
+  social_links?: any;
 }
 
 export interface CommunityPost {
@@ -69,7 +73,7 @@ export interface FriendRequest {
 export async function getCommunityMembers(excludeUserId?: string): Promise<CommunityMember[]> {
   let query = supabase
     .from("profiles")
-    .select("id, email, full_name, bio, profession, avatar_url, created_at, is_admin, role")
+    .select("id, email, full_name, bio, profession, avatar_url, created_at, is_admin, role, ion_id, username, privacy_settings, social_links")
     .order("created_at", { ascending: false })
     .limit(50);
 
@@ -147,7 +151,7 @@ export async function createCommunityPost(userId: string, content: string, image
 export async function getMyProfile(userId: string): Promise<(CommunityMember & { gemini_api_key?: string }) | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, bio, profession, avatar_url, gemini_api_key, created_at, is_admin, role")
+    .select("id, email, full_name, bio, profession, avatar_url, gemini_api_key, created_at, is_admin, role, ion_id, username, privacy_settings, social_links")
     .eq("id", userId)
     .maybeSingle();
 
@@ -486,6 +490,129 @@ export async function getFriends(userId: string): Promise<CommunityMember[]> {
   }
 
   return profiles ?? [];
+}
+
+// ========== FUNCIONES DE SEGUIMIENTO (FOLLOWS) ==========
+
+export async function followUser(followerId: string, followingId: string) {
+  const { data, error } = await supabase
+    .from("follows")
+    .insert({ follower_id: followerId, following_id: followingId })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function unfollowUser(followerId: string, followingId: string) {
+  const { error } = await supabase
+    .from("follows")
+    .delete()
+    .eq("follower_id", followerId)
+    .eq("following_id", followingId);
+
+  if (error) throw error;
+}
+
+export async function isFollowing(followerId: string, followingId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("follows")
+    .select("id")
+    .eq("follower_id", followerId)
+    .eq("following_id", followingId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingTableError(error)) return false;
+    throw error;
+  }
+
+  return !!data;
+}
+
+export async function getFollowers(userId: string): Promise<CommunityMember[]> {
+  const { data, error } = await supabase
+    .from("follows")
+    .select("follower_id")
+    .eq("following_id", userId);
+
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw error;
+  }
+
+  const followerIds = (data ?? []).map(f => f.follower_id);
+  if (followerIds.length === 0) return [];
+
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, bio, profession, avatar_url, created_at, is_admin, role, ion_id, username, privacy_settings, social_links")
+    .in("id", followerIds);
+
+  if (profileError) {
+    if (isMissingTableError(profileError)) return [];
+    throw profileError;
+  }
+
+  return profiles ?? [];
+}
+
+export async function getFollowing(userId: string): Promise<CommunityMember[]> {
+  const { data, error } = await supabase
+    .from("follows")
+    .select("following_id")
+    .eq("follower_id", userId);
+
+  if (error) {
+    if (isMissingTableError(error)) return [];
+    throw error;
+  }
+
+  const followingIds = (data ?? []).map(f => f.following_id);
+  if (followingIds.length === 0) return [];
+
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, bio, profession, avatar_url, created_at, is_admin, role, ion_id, username, privacy_settings, social_links")
+    .in("id", followingIds);
+
+  if (profileError) {
+    if (isMissingTableError(profileError)) return [];
+    throw profileError;
+  }
+
+  return profiles ?? [];
+}
+
+export async function getFriendsCount(userId: string): Promise<number> {
+  // Amigos = personas que sigo y me siguen de vuelta (mutuo follow)
+  const { data, error } = await supabase
+    .from("follows")
+    .select("following_id")
+    .eq("follower_id", userId);
+
+  if (error) {
+    if (isMissingTableError(error)) return 0;
+    throw error;
+  }
+
+  const followingIds = (data ?? []).map(f => f.following_id);
+  if (followingIds.length === 0) return 0;
+
+  // Verificar cuántos de estos me siguen de vuelta
+  const { data: mutualFollows, error: mutualError } = await supabase
+    .from("follows")
+    .select("follower_id")
+    .in("follower_id", followingIds)
+    .eq("following_id", userId);
+
+  if (mutualError) {
+    if (isMissingTableError(mutualError)) return 0;
+    throw mutualError;
+  }
+
+  return (mutualFollows ?? []).length;
 }
 
 // ========== ALGORITMO SIMPLE DE RECOMENDACIÓN ==========

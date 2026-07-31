@@ -71,7 +71,7 @@ CREATE TABLE notifications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     actor_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'new_post')),
+    type TEXT NOT NULL CHECK (type IN ('like', 'comment', 'follow', 'new_post', 'friend_request')),
     post_id UUID REFERENCES community_posts(id) ON DELETE CASCADE,
     message TEXT,
     is_read BOOLEAN DEFAULT false,
@@ -115,9 +115,56 @@ WITH CHECK (user_id = auth.uid());
 -- ============================================
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ion_id TEXT UNIQUE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS privacy_settings JSONB DEFAULT '{"profile_visibility": "public", "posts_visibility": "public"}'::jsonb;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}'::jsonb;
 
 -- ============================================
--- PASO 8: Configurar RLS para profiles (actualizar)
+-- PASO 8: Crear tabla follows (para seguir usuarios)
+-- ============================================
+DROP TABLE IF EXISTS follows CASCADE;
+
+CREATE TABLE follows (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    follower_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    following_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(follower_id, following_id)
+);
+
+-- ============================================
+-- PASO 9: Crear índices para follows
+-- ============================================
+CREATE INDEX idx_follows_follower_id ON follows(follower_id);
+CREATE INDEX idx_follows_following_id ON follows(following_id);
+
+-- ============================================
+-- PASO 10: Configurar RLS para follows
+-- ============================================
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Usuarios pueden ver follows" ON follows;
+DROP POLICY IF EXISTS "Usuarios pueden crear follows" ON follows;
+DROP POLICY IF EXISTS "Usuarios pueden eliminar follows" ON follows;
+
+CREATE POLICY "Usuarios pueden ver follows"
+ON follows FOR SELECT
+TO authenticated
+USING (follower_id = auth.uid() OR following_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden crear follows"
+ON follows FOR INSERT
+TO authenticated
+WITH CHECK (follower_id = auth.uid());
+
+CREATE POLICY "Usuarios pueden eliminar follows"
+ON follows FOR DELETE
+TO authenticated
+USING (follower_id = auth.uid());
+
+-- ============================================
+-- PASO 11: Configurar RLS para profiles (actualizar)
 -- ============================================
 DROP POLICY IF EXISTS "Usuarios pueden ver profiles" ON profiles;
 DROP POLICY IF EXISTS "Usuarios pueden actualizar su profile" ON profiles;
@@ -134,13 +181,20 @@ USING (id = auth.uid())
 WITH CHECK (id = auth.uid());
 
 -- ============================================
--- PASO 9: Activar Realtime para community_posts y notifications
+-- PASO 12: Activar Realtime para community_posts y notifications
 -- ============================================
 ALTER PUBLICATION supabase_realtime ADD TABLE community_posts;
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 
 -- ============================================
--- PASO 10: Verificar configuración
+-- PASO 13: Generar IDs únicos ION para usuarios existentes
+-- ============================================
+UPDATE profiles 
+SET ion_id = 'ION-' || LPAD(encode(gen_random_bytes(3), 'hex'), 6, '0')
+WHERE ion_id IS NULL;
+
+-- ============================================
+-- PASO 14: Verificar configuración
 -- ============================================
 SELECT 
     'community_posts' AS tabla,
@@ -158,6 +212,12 @@ SELECT
     'profiles' AS tabla,
     COUNT(*) AS columnas
 FROM information_schema.columns
-WHERE table_name = 'profiles' AND table_schema = 'public';
+WHERE table_name = 'profiles' AND table_schema = 'public'
+UNION ALL
+SELECT 
+    'follows' AS tabla,
+    COUNT(*) AS columnas
+FROM information_schema.columns
+WHERE table_name = 'follows' AND table_schema = 'public';
 
 SELECT '✅ FIX FINAL IÓN MAX COMPLETADO' AS resultado;
