@@ -10,17 +10,8 @@ import { SupportTicketsSection } from "./support-tickets-section";
 
 export function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "notifications" | "ai" | "payments" | "invoices" | "tickets">("profile");
+  const [activeTab, setActiveTab] = useState<"security" | "notifications" | "ai" | "payments" | "invoices" | "tickets">("security");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Profile form state
-  const [fullName, setFullName] = useState("");
-  const [bio, setBio] = useState("");
-  const [profession, setProfession] = useState("");
-  const [phone, setPhone] = useState("");
-  const [location, setLocation] = useState("");
-  const [website, setWebsite] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
 
   // Security form state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -47,34 +38,6 @@ export function SettingsPage() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
-
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: fullName,
-          bio,
-          profession,
-          phone,
-          location,
-          website,
-          avatar_url: avatarUrl,
-        })
-        .eq("id", user?.id);
-
-      if (error) throw error;
-
-      toast.success("Perfil actualizado exitosamente");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al actualizar perfil");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,17 +254,7 @@ export function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10 pb-4 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`px-4 py-2 rounded-xl text-sm font-black transition-all whitespace-nowrap ${
-            activeTab === "profile"
-              ? "bg-white text-black"
-              : "bg-white/5 text-zinc-400 hover:bg-white/10"
-          }`}
-        >
-          Perfil
-        </button>
+      <div className="flex gap-2 overflow-x-auto pb-2">
         <button
           onClick={() => setActiveTab("security")}
           className={`px-4 py-2 rounded-xl text-sm font-black transition-all whitespace-nowrap ${
@@ -363,90 +316,6 @@ export function SettingsPage() {
           Tickets
         </button>
       </div>
-
-      {/* Profile Tab */}
-      {activeTab === "profile" && (
-        <form onSubmit={handleProfileUpdate} className="rounded-3xl border border-white/10 bg-zinc-950/80 p-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm text-zinc-400 md:col-span-2">
-              Nombre completo
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="Tu nombre completo"
-              />
-            </label>
-            <label className="text-sm text-zinc-400">
-              Profesión
-              <input
-                type="text"
-                value={profession}
-                onChange={(e) => setProfession(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="Ej. Desarrollador, Diseñador, etc."
-              />
-            </label>
-            <label className="text-sm text-zinc-400">
-              Teléfono
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="+593 99 123 4567"
-              />
-            </label>
-            <label className="text-sm text-zinc-400">
-              Ubicación
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="Ciudad, País"
-              />
-            </label>
-            <label className="text-sm text-zinc-400">
-              Sitio web
-              <input
-                type="url"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="https://tu-sitio.com"
-              />
-            </label>
-            <label className="text-sm text-zinc-400 md:col-span-2">
-              URL del Avatar
-              <input
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="https://ejemplo.com/avatar.jpg"
-              />
-            </label>
-            <label className="text-sm text-zinc-400 md:col-span-2">
-              Biografía
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="mt-2 min-h-24 w-full rounded-2xl border border-white/10 bg-black/80 px-4 py-3 text-white"
-                placeholder="Cuéntanos sobre ti..."
-              />
-            </label>
-          </div>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="mt-6 w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-black py-4 rounded-xl text-sm uppercase tracking-wider hover:shadow-[0_0_30px_rgba(250,204,21,0.5)] transition-all duration-300 disabled:opacity-50"
-          >
-            {isSaving ? "Guardando..." : "Guardar Perfil"}
-          </button>
-        </form>
-      )}
 
       {/* Security Tab */}
       {activeTab === "security" && (
